@@ -17,6 +17,7 @@ import FontAwesome from '@expo/vector-icons/FontAwesome';
 import Colors from '../../constants/Colors';
 import { useAuthStore } from '../../store/authStore';
 import { useAnimalStore } from '../../store/animalStore';
+import { useRouter } from 'expo-router';
 
 interface MenuItemProps {
   icon: string;
@@ -51,6 +52,7 @@ export default function MoreScreen() {
   const user = useAuthStore((s) => s.user);
   const gateway = useAnimalStore((s) => s.gateway);
   const animals = useAnimalStore((s) => s.animals);
+  const router = useRouter();
 
   const handleWhatsApp = () => {
     Linking.openURL('https://wa.me/263777926123');
@@ -83,32 +85,26 @@ export default function MoreScreen() {
         {/* Subscription Summary */}
         <View style={styles.subscriptionCard}>
           <View style={styles.subRow}>
-            <Text style={styles.subLabel}>Plan</Text>
-            <Text style={styles.subValue}>
-              {user?.subscription?.plan?.charAt(0).toUpperCase()}{user?.subscription?.plan?.slice(1)} Plan
-            </Text>
+            <Text style={styles.subLabel}>Connected Devices</Text>
+            <Text style={styles.subValue}>{animals.length} Active</Text>
           </View>
           <View style={styles.subRow}>
-            <Text style={styles.subLabel}>Devices Active</Text>
-            <Text style={styles.subValue}>{animals.length} / {user?.subscription?.tagCount || 0}</Text>
-          </View>
-          <View style={styles.subRow}>
-            <Text style={styles.subLabel}>Monthly Cost</Text>
+            <Text style={styles.subLabel}>Monthly Connectivity</Text>
             <Text style={[styles.subValue, { color: Colors.primary }]}>
-              US${((user?.subscription?.pricePerTag || 0) * (user?.subscription?.tagCount || 0)).toFixed(2)}/mo
+              R{(animals.length * 100).toFixed(2)}/mo
             </Text>
           </View>
-          <TouchableOpacity style={styles.upgradeBtn}>
-            <Text style={styles.upgradeBtnText}>Manage Subscription</Text>
+          <TouchableOpacity style={styles.upgradeBtn} onPress={() => router.push('/more/subscription')}>
+            <Text style={styles.upgradeBtnText}>Buy More Devices</Text>
           </TouchableOpacity>
         </View>
 
         {/* Menu Sections */}
         <Text style={styles.sectionTitle}>ASSETS & TRACKING</Text>
         <View style={styles.menuGroup}>
-          <MenuItem icon="map" label="Safe Zone Editor" subtitle="Draw boundaries for alerts" color={Colors.primary} onPress={() => {}} />
-          <MenuItem icon="plus-circle" label="Register Device" subtitle="Add ear tag or GPS tracker" color={Colors.success} onPress={() => {}} />
-          <MenuItem icon="history" label="Movement History" subtitle="Track asset trails" color={Colors.info} onPress={() => {}} />
+          <MenuItem icon="map" label="Safe Zone Editor" subtitle="Draw boundaries for alerts" color={Colors.primary} onPress={() => router.push('/more/safe-zone')} />
+          <MenuItem icon="plus-circle" label="Register Device" subtitle="Add ear tag or GPS tracker" color={Colors.success} onPress={() => router.push('/more/register-device')} />
+          <MenuItem icon="history" label="Movement History" subtitle="Track asset trails" color={Colors.info} onPress={() => router.push('/more/movement-history')} />
         </View>
 
         <Text style={styles.sectionTitle}>GATEWAY & NETWORK</Text>
@@ -119,35 +115,35 @@ export default function MoreScreen() {
             subtitle={`${gateway.name} — ${gateway.status}`}
             color={gateway.status === 'online' ? Colors.success : Colors.danger}
             badge={gateway.status === 'online' ? '●' : '○'}
-            onPress={() => {}}
+            onPress={() => router.push('/more/gateway-status')}
           />
           {/* TODO: HARDWARE INTEGRATION - MikroTik gateway configuration */}
-          <MenuItem icon="cogs" label="Gateway Config" subtitle="MikroTik wAP LR8 settings" color={Colors.textSecondary} onPress={() => {}} />
+          <MenuItem icon="cogs" label="Gateway Config" subtitle="MikroTik wAP LR8 settings" color={Colors.textSecondary} onPress={() => router.push('/more/gateway-config')} />
           {/* TODO: HARDWARE INTEGRATION - TTN console link */}
-          <MenuItem icon="cloud" label="TTN Console" subtitle="The Things Network dashboard" color={Colors.info} onPress={() => {}} />
+          <MenuItem icon="cloud" label="TTN Console" subtitle="The Things Network dashboard" color={Colors.info} onPress={() => Linking.openURL('https://console.thethingsnetwork.org/')} />
         </View>
 
         <Text style={styles.sectionTitle}>APP SETTINGS</Text>
         <View style={styles.menuGroup}>
-          <MenuItem icon="bell" label="Notifications" subtitle="Push, SMS, alert rules" color={Colors.warning} onPress={() => {}} />
-          <MenuItem icon="language" label="Language" subtitle="English · Ndebele" color={Colors.textPrimary} onPress={() => {}} />
-          <MenuItem icon="refresh" label="Offline Data" subtitle="Sync & cache settings" color={Colors.info} onPress={() => {}} />
-          <MenuItem icon="shield" label="Privacy & Security" color={Colors.textSecondary} onPress={() => {}} />
+          <MenuItem icon="bell" label="Notifications" subtitle="Push, SMS, alert rules" color={Colors.warning} onPress={() => router.push('/more/notifications')} />
+          <MenuItem icon="language" label="Language" subtitle="English · Ndebele" color={Colors.textPrimary} onPress={() => router.push('/more/language')} />
+          <MenuItem icon="refresh" label="Offline Data" subtitle="Sync & cache settings" color={Colors.info} onPress={() => router.push('/more/offline-data')} />
+          <MenuItem icon="shield" label="Privacy & Security" color={Colors.textSecondary} onPress={() => router.push('/more/privacy')} />
         </View>
 
         <Text style={styles.sectionTitle}>SUPPORT</Text>
         <View style={styles.menuGroup}>
           <MenuItem icon="whatsapp" label="WhatsApp Support" subtitle="077 792 6123" color="#25D366" onPress={handleWhatsApp} />
-          <MenuItem icon="question-circle" label="Help & FAQ" color={Colors.textSecondary} onPress={() => {}} />
-          <MenuItem icon="info-circle" label="About HerdFinder" subtitle="v1.0.0" color={Colors.primary} onPress={() => {}} />
+          <MenuItem icon="question-circle" label="Help & FAQ" color={Colors.textSecondary} onPress={() => router.push('/more/help')} />
+          <MenuItem icon="info-circle" label="About HerdFinder" subtitle="v1.0.0" color={Colors.primary} onPress={() => router.push('/more/about')} />
         </View>
 
         {/* Promo Banner */}
         <View style={styles.promoBanner}>
           <FontAwesome name="gift" size={20} color={Colors.textOnPrimary} />
           <View style={styles.promoContent}>
-            <Text style={styles.promoTitle}>First 3 Devices = US$10/month</Text>
-            <Text style={styles.promoSub}>Pay yearly → Get 2 months free!</Text>
+            <Text style={styles.promoTitle}>Bulk Hardware Discount</Text>
+            <Text style={styles.promoSub}>Buy 4 or more trackers for only R800 each!</Text>
           </View>
         </View>
 

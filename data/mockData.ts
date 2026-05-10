@@ -285,13 +285,41 @@ export const mockGateway: Gateway = {
   lastSeen: new Date(),
 };
 
+const generateCirclePolygon = (centerLat: number, centerLng: number, radiusKm: number, points: number = 32) => {
+  const coords = [];
+  const latRatio = 111.32; // km per degree latitude
+  const lngRatio = 111.32 * Math.cos(centerLat * Math.PI / 180); // km per degree longitude
+  
+  for (let i = 0; i < points; i++) {
+    const angle = (i * 2 * Math.PI) / points;
+    coords.push({
+      latitude: centerLat + (radiusKm / latRatio) * Math.sin(angle),
+      longitude: centerLng + (radiusKm / lngRatio) * Math.cos(angle)
+    });
+  }
+  return coords;
+};
+
 export const mockSafeZone: SafeZone = {
   id: 'sz-001',
   name: 'SAFE ZONE',
-  coordinates: [
-    { latitude: BASE_LAT + 0.020, longitude: BASE_LNG - 0.015 },
-    { latitude: BASE_LAT + 0.020, longitude: BASE_LNG + 0.020 },
-    { latitude: BASE_LAT - 0.012, longitude: BASE_LNG + 0.020 },
-    { latitude: BASE_LAT - 0.012, longitude: BASE_LNG - 0.015 },
-  ],
+  coordinates: generateCirclePolygon(BASE_LAT, BASE_LNG, 10, 32),
 };
+
+const getRandomLocationInRadius = (centerLat: number, centerLng: number, radiusKm: number) => {
+  const angle = Math.random() * Math.PI * 2;
+  const r = Math.sqrt(Math.random()) * radiusKm;
+  const latRatio = 111.32;
+  const lngRatio = 111.32 * Math.cos(centerLat * Math.PI / 180);
+  return {
+    latitude: centerLat + (r / latRatio) * Math.sin(angle),
+    longitude: centerLng + (r / lngRatio) * Math.cos(angle)
+  };
+};
+
+// Scatter trackers randomly within the 10km radius
+mockAnimals.forEach(animal => {
+  const loc = getRandomLocationInRadius(BASE_LAT, BASE_LNG, 9.5); // 9.5km to ensure they stay strictly within the 10km boundary
+  animal.latitude = loc.latitude;
+  animal.longitude = loc.longitude;
+});

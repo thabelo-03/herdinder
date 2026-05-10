@@ -17,9 +17,11 @@ interface AnimalState {
   
   // Actions
   setAnimals: (animals: Animal[]) => void;
+  addAnimal: (animal: Animal) => void;
   selectAnimal: (animal: Animal | null) => void;
   updateAnimal: (id: string, updates: Partial<Animal>) => void;
   setGateway: (gateway: Gateway) => void;
+  updateSafeZone: (safeZone: SafeZone) => void;
   loadMockData: () => void;
   
   // TODO: HARDWARE INTEGRATION
@@ -37,6 +39,8 @@ export const useAnimalStore = create<AnimalState>((set) => ({
   
   setAnimals: (animals) => set({ animals }),
   
+  addAnimal: (animal) => set((state) => ({ animals: [...state.animals, animal] })),
+  
   selectAnimal: (animal) => set({ selectedAnimal: animal }),
   
   updateAnimal: (id, updates) => set((state) => ({
@@ -46,6 +50,8 @@ export const useAnimalStore = create<AnimalState>((set) => ({
   })),
   
   setGateway: (gateway) => set({ gateway }),
+  
+  updateSafeZone: (safeZone) => set({ safeZone }),
   
   loadMockData: () => set({
     animals: mockAnimals,
