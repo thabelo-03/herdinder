@@ -1,7 +1,9 @@
 import React, { useRef } from 'react';
-import { StyleSheet, View } from 'react-native';
-import MapView, { Marker, Polygon, PROVIDER_DEFAULT, UrlTile } from 'react-native-maps';
+import { NativeModules, StyleSheet, View } from 'react-native';
+import MapView, { Marker, Polygon, PROVIDER_DEFAULT } from 'react-native-maps';
 import Colors from '../constants/Colors';
+import { TILE_CACHE_DIR } from '../services/storageManager';
+import OfflineTileOverlay from './OfflineTileOverlay'; // Import the new component
 
 interface Props {
   initialCenter: { latitude: number; longitude: number };
@@ -33,20 +35,14 @@ export default function SafeZoneEditorMapNative({ initialCenter, points, onMapPr
         onPress={handlePress}
         provider={PROVIDER_DEFAULT} // Ensure default provider is used if custom tile overlay is not yet implemented
       >
-        {/*
-          // Replace UrlTile with your custom OfflineTileOverlay component
-          // This component would be implemented as a native module.
-          // It would check local cache first, then fall back to network if tile not found.
-        */}
-        {/* <OfflineTileOverlay
-          cachePath={NativeModules.TileCacheManager.TILE_CACHE_DIR} // Path to your local tile cache
+        {/* Use the custom OfflineTileOverlay component */}
+        <OfflineTileOverlay
+          cachePath={TILE_CACHE_DIR}
           urlTemplate={`https://api.mapbox.com/styles/v1/mapbox/satellite-streets-v12/tiles/512/{z}/{x}/{y}?access_token=${process.env.EXPO_PUBLIC_MAPBOX_KEY}`}
           maximumZ={19}
           zIndex={-1}
           tileSize={512}
-        /> */}
-        {/* For now, keeping UrlTile as a fallback/example */}
-        <UrlTile urlTemplate={`https://api.mapbox.com/styles/v1/mapbox/satellite-streets-v12/tiles/512/{z}/{x}/{y}?access_token=${process.env.EXPO_PUBLIC_MAPBOX_KEY}`} maximumZ={19} zIndex={-1} tileSize={512} />
+        />
 
         {points.length > 2 && (
           <Polygon

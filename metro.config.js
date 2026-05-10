@@ -3,6 +3,9 @@ const path = require('path');
 
 const config = getDefaultConfig(__dirname);
 
+config.resolver.assetExts.push('wasm');
+
+
 /**
  * Fix: Metro's platform-extension resolver tries to append .web.ts, .ts, etc.
  * to the `main` field of packages like leaflet (dist/leaflet-src.js).
@@ -24,3 +27,4 @@ config.resolver.resolveRequest = (context, moduleName, platform) => {
 };
 
 module.exports = config;
+
