@@ -1,3 +1,5 @@
+import * as FileSystem from 'expo-file-system/legacy';
+import * as SQLite from 'expo-sqlite';
 import { FontAwesome } from '@expo/vector-icons';
 import React, { useCallback, useRef, useState } from 'react';
 import { Alert, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
@@ -189,10 +191,10 @@ export default function HerdMapView({ animals, safeZone, selectedAnimal, onMarke
         {/* Import the custom OfflineTileOverlay component */}
         <HFMapOfflineOverlay
           cachePath={TILE_CACHE_DIR}
-          urlTemplate={`https://api.mapbox.com/styles/v1/mapbox/satellite-streets-v12/tiles/512/{z}/{x}/{y}?access_token=${process.env.EXPO_PUBLIC_MAPBOX_KEY}`}
+          urlTemplate="https://api.mapbox.com/styles/v1/mapbox/satellite-v9/tiles/256/{z}/{x}/{y}?access_token=pk.eyJ1IjoiZm9ydHVuZW0iLCJhIjoiY21venlsemF1MHM4eDJzc2o1b2ExdnR2ayJ9.JJOfkBYDWJS_0gQ2O71UFg"
           maximumZ={19}
-          zIndex={-1}
-          tileSize={512}
+          zIndex={1}
+          tileSize={256}
         />
 
         {/* Download Area Rectangle */}
@@ -277,26 +279,40 @@ export default function HerdMapView({ animals, safeZone, selectedAnimal, onMarke
             : `${animal.temperature}°C`;
 
           return (
-            <Marker key={animal.id} coordinate={{ latitude: animal.latitude, longitude: animal.longitude }} onPress={() => handlePress(animal)} anchor={{ x: 0.5, y: 1 }} tracksViewChanges={false}>
+            <Marker 
+              key={animal.id} 
+              coordinate={{ latitude: animal.latitude, longitude: animal.longitude }} 
+              onPress={() => handlePress(animal)} 
+              anchor={{ x: 0.5, y: 1 }} 
+              tracksViewChanges={true}
+              zIndex={10}
+            >
               <View style={styles.markerWrapper}>
+                {/* Main Label Bubble */}
                 <View style={[
                   styles.markerBubble,
-                  isSelected && { borderColor: Colors.primary, borderWidth: 2 },
-                  !isCattle && { borderColor: categoryColor + '60' },
+                  isSelected && { borderColor: Colors.primary, borderWidth: 2.5 }
                 ]}>
-                  <Text style={styles.markerName}>{animal.name}</Text>
-                  <Text style={[styles.markerTemp, { color: isCattle ? getTempColor(animal.temperature) : categoryColor }]}>
-                    {statusLabel}
-                  </Text>
-                </View>
-                <View style={{ alignItems: 'center', justifyContent: 'center' }}>
-                  {animal.status === 'Moving' && (
-                    <BreathingDot color={pinColor} size={30} style={{ position: 'absolute', top: -6 }} />
-                  )}
-                  <View style={[styles.markerPin, { backgroundColor: pinColor }]}>
-                    <FontAwesome name={iconName} size={10} color="#FFF" />
+                  <View style={styles.markerHeader}>
+                    <View style={[styles.categoryBadge, { backgroundColor: pinColor }]}>
+                      <FontAwesome name={iconName} size={10} color="#000" />
+                    </View>
+                    <Text style={styles.markerIdText}>{animal.tagId}</Text>
+                  </View>
+                  
+                  <Text style={styles.markerNameText} numberOfLines={1}>{animal.name}</Text>
+                  
+                  <View style={styles.markerFooter}>
+                    <Text style={[styles.markerTempText, { color: getTempColor(animal.temperature) }]}>
+                      {animal.temperature}°C
+                    </Text>
+                    <Text style={styles.markerStatusText}>• {animal.status}</Text>
                   </View>
                 </View>
+                
+                {/* Indicator Pin */}
+                <View style={[styles.markerPin, { backgroundColor: pinColor }]} />
+                <View style={styles.markerPointer} />
               </View>
             </Marker>
           );
@@ -348,7 +364,7 @@ export default function HerdMapView({ animals, safeZone, selectedAnimal, onMarke
             </Text>
             <View style={styles.progressBar}>
               <View
-                style={[styles.progressFill, { width: `${(downloadProgress.d / downloadProgress.t) * 100}%` }]}
+                style={[styles.progressFill, { width: `${(downloadProgress.d / Math.max(1, downloadProgress.t)) * 100}%` }]}
               />
             </View>
           </View>
@@ -361,20 +377,43 @@ export default function HerdMapView({ animals, safeZone, selectedAnimal, onMarke
 const styles = StyleSheet.create({
   container: { flex: 1 },
   map: { flex: 1 },
-  markerWrapper: { alignItems: 'center' },
+  markerWrapper: { alignItems: 'center', paddingBottom: 5 },
   markerBubble: {
-    backgroundColor: 'rgba(10,10,20,0.90)', borderRadius: 10,
-    paddingHorizontal: 10, paddingVertical: 5, alignItems: 'center',
-    borderWidth: 1, borderColor: 'rgba(255,255,255,0.20)',
-    shadowColor: '#000', shadowOpacity: 0.6, shadowRadius: 4,
-    shadowOffset: { width: 0, height: 2 }, elevation: 6,
+    backgroundColor: '#FFF',
+    borderRadius: 12,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    minWidth: 100,
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
+    elevation: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.4,
+    shadowRadius: 8,
   },
-  markerName: { color: '#FFF', fontSize: 11, fontWeight: '700' },
-  markerTemp: { fontSize: 13, fontWeight: 'bold', marginTop: 1 },
-  markerPin: {
-    width: 22, height: 22, borderRadius: 11,
+  markerHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 4 },
+  categoryBadge: {
+    width: 18, height: 18, borderRadius: 9,
     justifyContent: 'center', alignItems: 'center',
-    marginTop: -2, borderWidth: 2, borderColor: '#FFF', elevation: 6,
+    marginRight: 6,
+  },
+  markerIdText: { color: '#666', fontSize: 10, fontWeight: '700' },
+  markerNameText: { color: '#1A1A2E', fontSize: 13, fontWeight: '900', marginBottom: 2 },
+  markerFooter: { flexDirection: 'row', alignItems: 'center' },
+  markerTempText: { fontSize: 11, fontWeight: '800' },
+  markerStatusText: { color: '#888', fontSize: 10, fontWeight: '600', marginLeft: 4 },
+  markerPin: {
+    width: 12, height: 12, borderRadius: 6,
+    borderWidth: 2, borderColor: '#FFF',
+    marginTop: -6, elevation: 14,
+  },
+  markerPointer: {
+    width: 0, height: 0,
+    borderLeftWidth: 6, borderRightWidth: 6, borderTopWidth: 8,
+    borderLeftColor: 'transparent', borderRightColor: 'transparent',
+    borderTopColor: '#FFF',
+    marginTop: -1,
   },
   controls: { position: 'absolute', right: 12, top: '28%', gap: 10 },
   controlBtn: {

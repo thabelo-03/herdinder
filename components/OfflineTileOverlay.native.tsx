@@ -20,25 +20,25 @@ export default function HFMapOfflineOverlay(props: OfflineTileOverlayProps) {
     // Native layers often expect a raw path without the "file://" prefix
     const cleanPath = props.cachePath ? props.cachePath.replace('file://', '') : undefined;
 
+    const isSecretKey = props.urlTemplate?.includes('access_token=sk.');
+
     if (__DEV__) {
+        if (isSecretKey) {
+            console.warn('[HFMapOfflineOverlay] WARNING: You are using a Mapbox SECRET KEY (sk.). Tiles will likely be blocked on mobile. Please use a PUBLIC TOKEN (pk.).');
+        }
         console.log('[HFMapOfflineOverlay] urlTemplate:', props.urlTemplate);
-        console.log('[HFMapOfflineOverlay] cachePath:', cleanPath);
     }
 
-    // Fallback if urlTemplate is missing to prevent crashes
-    if (!props.urlTemplate) {
-        return null;
-    }
+    if (!props.urlTemplate) return null;
 
     return (
         <UrlTile
             urlTemplate={props.urlTemplate}
-            zIndex={props.zIndex ?? -1}
+            // Use a positive zIndex to ensure it's above the base layer on Android
+            zIndex={props.zIndex && props.zIndex > 0 ? props.zIndex : 1}
             maximumZ={props.maximumZ ?? 19}
             tileSize={props.tileSize ?? 256}
-            // @ts-ignore - tileCachePath and offlineMode are supported on Android
-            offlineMode={false} 
-            tileCachePath={cleanPath}
+            // Removed caching props temporarily to debug network loading
             opacity={props.opacity ?? 1}
         />
     );
