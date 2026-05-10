@@ -1,5 +1,6 @@
 /**
  * Reports Screen - Temperature trends, movement logs, analytics
+ * Supports cattle, motorbikes, and vehicles
  */
 
 import React, { useState } from 'react';
@@ -12,14 +13,12 @@ import {
   SafeAreaView,
   Dimensions,
 } from 'react-native';
-import Svg, { Path, Line, Circle, Rect, Text as SvgText } from 'react-native-svg';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
-import Colors, { getTempColor } from '../../constants/Colors';
+import Colors, { getTempColor, getCategoryColor } from '../../constants/Colors';
 import { useAnimalStore } from '../../store/animalStore';
 import { useAlertStore } from '../../store/alertStore';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
-const CHART_WIDTH = SCREEN_WIDTH - 80;
 
 type TimeRange = '24h' | '7d' | '30d';
 
@@ -28,11 +27,13 @@ export default function ReportsScreen() {
   const alerts = useAlertStore((s) => s.alerts);
   const [timeRange, setTimeRange] = useState<TimeRange>('7d');
 
-  const avgTemp = animals.length > 0
-    ? (animals.reduce((sum, a) => sum + a.temperature, 0) / animals.length).toFixed(1)
+  const cattle = animals.filter(a => a.category === 'cattle');
+  
+  const avgTemp = cattle.length > 0
+    ? (cattle.reduce((sum, a) => sum + a.temperature, 0) / cattle.length).toFixed(1)
     : '0';
 
-  const highTempCount = animals.filter((a) => a.temperature > 39).length;
+  const highTempCount = cattle.filter((a) => a.temperature > 39).length;
   const movingCount = animals.filter((a) => a.status === 'Moving').length;
   const alertsToday = alerts.filter((a) => {
     const today = new Date();
@@ -43,8 +44,9 @@ export default function ReportsScreen() {
   const alertsByType = [
     { label: 'Temp', count: alerts.filter(a => a.type === 'HIGH_TEMPERATURE').length, color: Colors.danger },
     { label: 'Zone', count: alerts.filter(a => a.type === 'LEFT_SAFE_ZONE').length, color: Colors.warning },
-    { label: 'Move', count: alerts.filter(a => a.type === 'MOVEMENT_ALERT').length, color: Colors.danger },
-    { label: 'Battery', count: alerts.filter(a => a.type === 'LOW_BATTERY').length, color: Colors.primary },
+    { label: 'Theft', count: alerts.filter(a => a.type === 'THEFT_ALERT' || a.type === 'TAG_TAMPER').length, color: Colors.danger },
+    { label: 'Speed', count: alerts.filter(a => a.type === 'SPEEDING').length, color: Colors.warning },
+    { label: 'Batt', count: alerts.filter(a => a.type === 'LOW_BATTERY').length, color: Colors.primary },
   ];
   const maxAlertCount = Math.max(...alertsByType.map(a => a.count), 1);
 
@@ -79,7 +81,7 @@ export default function ReportsScreen() {
         <View style={styles.summaryGrid}>
           <SummaryCard
             icon="thermometer-half"
-            label="Avg Temperature"
+            label="Cattle Avg Temp"
             value={`${avgTemp}°C`}
             color={Colors.primary}
           />
@@ -91,7 +93,7 @@ export default function ReportsScreen() {
           />
           <SummaryCard
             icon="arrows"
-            label="Moving Now"
+            label="Active/Moving"
             value={`${movingCount}`}
             color={Colors.success}
           />
@@ -103,43 +105,45 @@ export default function ReportsScreen() {
           />
         </View>
 
-        {/* Herd Temperature Overview */}
-        <View style={styles.chartCard}>
-          <Text style={styles.chartTitle}>Herd Temperature Overview</Text>
-          <View style={styles.tempBars}>
-            {animals.map((animal) => (
-              <View key={animal.id} style={styles.tempBarItem}>
-                <Text style={styles.tempBarLabel}>{animal.name.split(' ')[1]}</Text>
-                <View style={styles.tempBarTrack}>
-                  <View style={[
-                    styles.tempBarFill,
-                    {
-                      height: `${((animal.temperature - 35) / 5) * 100}%`,
-                      backgroundColor: getTempColor(animal.temperature),
-                    }
-                  ]} />
+        {/* Cattle Temperature Overview */}
+        {cattle.length > 0 && (
+          <View style={styles.chartCard}>
+            <Text style={styles.chartTitle}>Cattle Temperature Overview</Text>
+            <View style={styles.tempBars}>
+              {cattle.map((animal) => (
+                <View key={animal.id} style={styles.tempBarItem}>
+                  <Text style={styles.tempBarLabel}>{animal.name.split(' ')[1]}</Text>
+                  <View style={styles.tempBarTrack}>
+                    <View style={[
+                      styles.tempBarFill,
+                      {
+                        height: `${((animal.temperature - 35) / 5) * 100}%`,
+                        backgroundColor: getTempColor(animal.temperature),
+                      }
+                    ]} />
+                  </View>
+                  <Text style={[styles.tempBarValue, { color: getTempColor(animal.temperature) }]}>
+                    {animal.temperature}°
+                  </Text>
                 </View>
-                <Text style={[styles.tempBarValue, { color: getTempColor(animal.temperature) }]}>
-                  {animal.temperature}°
-                </Text>
+              ))}
+            </View>
+            <View style={styles.tempLegend}>
+              <View style={styles.legendItem}>
+                <View style={[styles.legendDot, { backgroundColor: Colors.success }]} />
+                <Text style={styles.legendText}>Normal ≤38°C</Text>
               </View>
-            ))}
-          </View>
-          <View style={styles.tempLegend}>
-            <View style={styles.legendItem}>
-              <View style={[styles.legendDot, { backgroundColor: Colors.success }]} />
-              <Text style={styles.legendText}>Normal ≤38°C</Text>
-            </View>
-            <View style={styles.legendItem}>
-              <View style={[styles.legendDot, { backgroundColor: Colors.primary }]} />
-              <Text style={styles.legendText}>Warm 38-39°C</Text>
-            </View>
-            <View style={styles.legendItem}>
-              <View style={[styles.legendDot, { backgroundColor: Colors.danger }]} />
-              <Text style={styles.legendText}>High &gt;39°C</Text>
+              <View style={styles.legendItem}>
+                <View style={[styles.legendDot, { backgroundColor: Colors.primary }]} />
+                <Text style={styles.legendText}>Warm 38-39°C</Text>
+              </View>
+              <View style={styles.legendItem}>
+                <View style={[styles.legendDot, { backgroundColor: Colors.danger }]} />
+                <Text style={styles.legendText}>High &gt;39°C</Text>
+              </View>
             </View>
           </View>
-        </View>
+        )}
 
         {/* Alert Distribution */}
         <View style={styles.chartCard}>
@@ -165,10 +169,11 @@ export default function ReportsScreen() {
 
         {/* Battery Status */}
         <View style={styles.chartCard}>
-          <Text style={styles.chartTitle}>Tag Battery Status</Text>
+          <Text style={styles.chartTitle}>Device Battery Status</Text>
           {animals.map((animal) => (
             <View key={animal.id} style={styles.batteryRow}>
-              <Text style={styles.batteryName}>{animal.name}</Text>
+              <View style={[styles.categoryIndicator, { backgroundColor: getCategoryColor(animal.category) }]} />
+              <Text style={styles.batteryName} numberOfLines={1}>{animal.name}</Text>
               <View style={styles.batteryTrack}>
                 <View style={[
                   styles.batteryFill,
@@ -334,6 +339,7 @@ const styles = StyleSheet.create({
     gap: 10,
     marginBottom: 10,
   },
+  categoryIndicator: { width: 8, height: 8, borderRadius: 4 },
   batteryName: { color: Colors.textSecondary, fontSize: 12, width: 60 },
   batteryTrack: {
     flex: 1,

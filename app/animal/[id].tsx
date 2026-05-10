@@ -1,5 +1,6 @@
 /**
- * Animal Detail Screen - Full vitals, temperature history, tag info
+ * Asset Detail Screen - Full vitals, history, device info
+ * Supports cattle (temperature focus) and vehicles (speed/GPS focus)
  * TODO: HARDWARE INTEGRATION - Show real DevEUI, AppEUI, firmware version
  */
 
@@ -15,7 +16,7 @@ import {
 } from 'react-native';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import Colors, { getTempColor, getTempStatus } from '../../constants/Colors';
+import Colors, { getTempColor, getTempStatus, getCategoryColor, getCategoryIcon, getCategoryLabel } from '../../constants/Colors';
 import { useAnimalStore } from '../../store/animalStore';
 import TempChart from '../../components/TempChart';
 
@@ -41,7 +42,7 @@ export default function AnimalDetailScreen() {
       <SafeAreaView style={styles.screen}>
         <View style={styles.errorState}>
           <FontAwesome name="exclamation-circle" size={48} color={Colors.textMuted} />
-          <Text style={styles.errorText}>Animal not found</Text>
+          <Text style={styles.errorText}>Asset not found</Text>
           <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
             <Text style={styles.backBtnText}>Go Back</Text>
           </TouchableOpacity>
@@ -50,8 +51,11 @@ export default function AnimalDetailScreen() {
     );
   }
 
+  const isCattle = animal.category === 'cattle';
   const tempStatus = getTempStatus(animal.temperature);
   const tempColor = getTempColor(animal.temperature);
+  const categoryColor = getCategoryColor(animal.category);
+  const categoryIcon = getCategoryIcon(animal.category) as any;
 
   return (
     <SafeAreaView style={styles.screen}>
@@ -67,25 +71,41 @@ export default function AnimalDetailScreen() {
       </View>
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
-        {/* Hero Card - Temperature */}
+        {/* Hero Card */}
         <View style={styles.heroCard}>
           <View style={styles.heroTop}>
             <View style={styles.heroLeft}>
-              <View style={[styles.heroIcon, { borderColor: tempColor }]}>
-                <FontAwesome name="paw" size={28} color={tempColor} />
+              <View style={[styles.heroIcon, { borderColor: isCattle ? tempColor : categoryColor }]}>
+                <FontAwesome name={categoryIcon} size={28} color={isCattle ? tempColor : categoryColor} />
               </View>
               <View>
                 <Text style={styles.heroName}>{animal.name}</Text>
                 <Text style={styles.heroSub}>{animal.location} · {animal.herdName}</Text>
+                {!isCattle && animal.plateNumber && (
+                   <Text style={styles.heroSub}>{animal.plateNumber}</Text>
+                )}
               </View>
             </View>
             <View style={styles.heroRight}>
-              <Text style={[styles.heroTemp, { color: tempColor }]}>
-                {animal.temperature}°C
-              </Text>
-              <View style={[styles.heroBadge, { backgroundColor: tempStatus.color }]}>
-                <Text style={styles.heroBadgeText}>{tempStatus.label}</Text>
-              </View>
+              {isCattle ? (
+                <>
+                  <Text style={[styles.heroTemp, { color: tempColor }]}>
+                    {animal.temperature}°C
+                  </Text>
+                  <View style={[styles.heroBadge, { backgroundColor: tempStatus.color }]}>
+                    <Text style={styles.heroBadgeText}>{tempStatus.label}</Text>
+                  </View>
+                </>
+              ) : (
+                <>
+                  <Text style={[styles.heroTemp, { color: categoryColor, fontSize: 24 }]}>
+                    {animal.speed != null && animal.speed > 0 ? `${animal.speed} km/h` : animal.status}
+                  </Text>
+                  <View style={[styles.heroBadge, { backgroundColor: animal.status === 'Moving' ? Colors.success : categoryColor }]}>
+                    <Text style={styles.heroBadgeText}>{getCategoryLabel(animal.category).toUpperCase()}</Text>
+                  </View>
+                </>
+              )}
             </View>
           </View>
         </View>
@@ -103,42 +123,51 @@ export default function AnimalDetailScreen() {
         </View>
 
         {/* Temperature History */}
-        <View style={styles.chartCard}>
-          <View style={styles.chartHeader}>
-            <Text style={styles.chartTitle}>Temperature History</Text>
-            <View style={styles.chartPills}>
-              <View style={[styles.chartPill, styles.chartPillActive]}>
-                <Text style={styles.chartPillTextActive}>24h</Text>
-              </View>
-              <View style={styles.chartPill}>
-                <Text style={styles.chartPillText}>7d</Text>
-              </View>
-              <View style={styles.chartPill}>
-                <Text style={styles.chartPillText}>30d</Text>
+        {isCattle && (
+          <View style={styles.chartCard}>
+            <View style={styles.chartHeader}>
+              <Text style={styles.chartTitle}>Temperature History</Text>
+              <View style={styles.chartPills}>
+                <View style={[styles.chartPill, styles.chartPillActive]}>
+                  <Text style={styles.chartPillTextActive}>24h</Text>
+                </View>
+                <View style={styles.chartPill}>
+                  <Text style={styles.chartPillText}>7d</Text>
+                </View>
+                <View style={styles.chartPill}>
+                  <Text style={styles.chartPillText}>30d</Text>
+                </View>
               </View>
             </View>
+            <TempChart data={animal.temperatureHistory} height={160} />
           </View>
-          <TempChart data={animal.temperatureHistory} height={160} />
-        </View>
+        )}
 
-        {/* Tag Information */}
+        {/* Device Information */}
         <View style={styles.tagCard}>
-          <Text style={styles.sectionTitle}>Tag Information</Text>
+          <Text style={styles.sectionTitle}>Device Information</Text>
           {/* TODO: HARDWARE INTEGRATION - Show real LoRaWAN credentials */}
-          <InfoRow label="Tag ID" value={animal.tagId} />
+          <InfoRow label="Device ID" value={animal.tagId} />
           <InfoRow label="DevEUI" value="00:1A:2B:3C:4D:5E:6F:70" />
-          <InfoRow label="Type" value="LoRaWAN Ear Tag (EU868)" />
+          <InfoRow label="Type" value={isCattle ? "LoRaWAN Ear Tag (EU868)" : "Dragino TrackerD (EU868)"} />
           <InfoRow label="Firmware" value="v1.2.3" />
           <InfoRow label="Last Uplink" value={formatLastSeen(animal.lastSeen)} />
           <InfoRow label="RSSI" value="-87 dBm" />
           <InfoRow label="SNR" value="8.5 dB" />
+          {!isCattle && animal.buzzerEnabled !== undefined && (
+            <InfoRow label="Buzzer Alarm" value={animal.buzzerEnabled ? "Armed" : "Disabled"} />
+          )}
+          {!isCattle && animal.tamperDetected !== undefined && (
+             <InfoRow label="Tamper Status" value={animal.tamperDetected ? "DETECTED" : "Normal"} />
+          )}
         </View>
 
         {/* Quick Actions */}
         <View style={styles.actionsRow}>
           <ActionButton icon="map-marker" label="Show on Map" color={Colors.primary} onPress={() => router.back()} />
+          {!isCattle && <ActionButton icon="volume-up" label="Sound Alarm" color={Colors.motorbike} onPress={() => {}} />}
           <ActionButton icon="bell" label="Alert Settings" color={Colors.warning} onPress={() => {}} />
-          <ActionButton icon="share-alt" label="Share" color={Colors.info} onPress={() => {}} />
+          {isCattle && <ActionButton icon="share-alt" label="Share" color={Colors.info} onPress={() => {}} />}
         </View>
 
         <View style={{ height: 40 }} />

@@ -89,7 +89,7 @@ export default function MoreScreen() {
             </Text>
           </View>
           <View style={styles.subRow}>
-            <Text style={styles.subLabel}>Tags Active</Text>
+            <Text style={styles.subLabel}>Devices Active</Text>
             <Text style={styles.subValue}>{animals.length} / {user?.subscription?.tagCount || 0}</Text>
           </View>
           <View style={styles.subRow}>
@@ -104,11 +104,11 @@ export default function MoreScreen() {
         </View>
 
         {/* Menu Sections */}
-        <Text style={styles.sectionTitle}>LIVESTOCK</Text>
+        <Text style={styles.sectionTitle}>ASSETS & TRACKING</Text>
         <View style={styles.menuGroup}>
-          <MenuItem icon="map" label="Safe Zone Editor" subtitle="Draw grazing boundaries" color={Colors.primary} onPress={() => {}} />
-          <MenuItem icon="plus-circle" label="Register New Tag" subtitle="Add LoRaWAN ear tag" color={Colors.success} onPress={() => {}} />
-          <MenuItem icon="history" label="Movement History" subtitle="Track movement trails" color={Colors.info} onPress={() => {}} />
+          <MenuItem icon="map" label="Safe Zone Editor" subtitle="Draw boundaries for alerts" color={Colors.primary} onPress={() => {}} />
+          <MenuItem icon="plus-circle" label="Register Device" subtitle="Add ear tag or GPS tracker" color={Colors.success} onPress={() => {}} />
+          <MenuItem icon="history" label="Movement History" subtitle="Track asset trails" color={Colors.info} onPress={() => {}} />
         </View>
 
         <Text style={styles.sectionTitle}>GATEWAY & NETWORK</Text>
@@ -146,7 +146,7 @@ export default function MoreScreen() {
         <View style={styles.promoBanner}>
           <FontAwesome name="gift" size={20} color={Colors.textOnPrimary} />
           <View style={styles.promoContent}>
-            <Text style={styles.promoTitle}>First 3 Tags = US$10/month</Text>
+            <Text style={styles.promoTitle}>First 3 Devices = US$10/month</Text>
             <Text style={styles.promoSub}>Pay yearly → Get 2 months free!</Text>
           </View>
         </View>

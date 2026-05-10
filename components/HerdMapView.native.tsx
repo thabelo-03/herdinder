@@ -2,7 +2,7 @@ import React, { useRef, useState, useCallback } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import MapView, { Marker, Polygon, PROVIDER_GOOGLE } from 'react-native-maps';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
-import Colors, { getTempColor } from '../constants/Colors';
+import Colors, { getTempColor, getCategoryColor, getCategoryIcon } from '../constants/Colors';
 import { Animal, SafeZone } from '../types';
 
 interface Props {
@@ -53,17 +53,33 @@ export default function HerdMapView({ animals, safeZone, selectedAnimal, onMarke
         <Polygon coordinates={safeZone.coordinates} strokeColor={Colors.safeZoneBorder} strokeWidth={2} fillColor={Colors.safeZoneFill} lineDashPattern={[8, 6]} />
 
         {animals.map((animal) => {
-          const tempColor = getTempColor(animal.temperature);
+          const isCattle = animal.category === 'cattle';
+          const categoryColor = getCategoryColor(animal.category);
+          const iconName = getCategoryIcon(animal.category) as any;
+          // Cattle markers show temperature color, vehicles show category color
+          const pinColor = isCattle ? getTempColor(animal.temperature) : categoryColor;
           const isSelected = selectedAnimal?.id === animal.id;
+
+          // Status text for vehicles
+          const statusLabel = !isCattle
+            ? (animal.speed && animal.speed > 0 ? `${animal.speed} km/h` : animal.status)
+            : `${animal.temperature}°C`;
+
           return (
             <Marker key={animal.id} coordinate={{ latitude: animal.latitude, longitude: animal.longitude }} onPress={() => handlePress(animal)} anchor={{ x: 0.5, y: 1 }} tracksViewChanges={false}>
               <View style={styles.markerWrapper}>
-                <View style={[styles.markerBubble, isSelected && { borderColor: Colors.primary, borderWidth: 2 }]}>
+                <View style={[
+                  styles.markerBubble,
+                  isSelected && { borderColor: Colors.primary, borderWidth: 2 },
+                  !isCattle && { borderColor: categoryColor + '60' },
+                ]}>
                   <Text style={styles.markerName}>{animal.name}</Text>
-                  <Text style={[styles.markerTemp, { color: tempColor }]}>{animal.temperature}°C</Text>
+                  <Text style={[styles.markerTemp, { color: isCattle ? getTempColor(animal.temperature) : categoryColor }]}>
+                    {statusLabel}
+                  </Text>
                 </View>
-                <View style={[styles.markerPin, { backgroundColor: tempColor }]}>
-                  <FontAwesome name="paw" size={10} color="#FFF" />
+                <View style={[styles.markerPin, { backgroundColor: pinColor }]}>
+                  <FontAwesome name={iconName} size={10} color="#FFF" />
                 </View>
               </View>
             </Marker>

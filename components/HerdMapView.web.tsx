@@ -1,12 +1,11 @@
 /**
  * Web map using Google Maps JavaScript API (hybrid/satellite mode).
- * Replace GOOGLE_MAPS_API_KEY with your key from https://console.cloud.google.com/
- * Required APIs to enable: Maps JavaScript API
+ * Supports cattle (paw icon), motorbikes (M icon), vehicles (V icon)
  */
 import React, { useEffect } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { Animal, SafeZone } from '../types';
-import { getTempColor } from '../constants/Colors';
+import { getTempColor, getCategoryColor } from '../constants/Colors';
 
 // ← Paste your Google Maps API key here
 const GOOGLE_MAPS_API_KEY = 'AIzaSyB38fZHOQbpLS1ArLMJGWZ8WTGqt8NULns';
@@ -18,8 +17,16 @@ interface Props {
   onMarkerPress: (animal: Animal) => void;
 }
 
+function getCategorySvgIcon(category: string): string {
+  switch (category) {
+    case 'cattle': return '🐄';
+    case 'motorbike': return '🏍';
+    case 'vehicle': return '🚗';
+    default: return '📍';
+  }
+}
+
 export default function HerdMapView({ animals, safeZone, selectedAnimal, onMarkerPress }: Props) {
-  // Listen for marker clicks posted from inside the iframe
   useEffect(() => {
     const handler = (e: MessageEvent) => {
       if (e.data?.type === 'markerPress') {
@@ -37,11 +44,20 @@ export default function HerdMapView({ animals, safeZone, selectedAnimal, onMarke
 
   const markersJs = animals
     .map((a) => {
-      const color = getTempColor(a.temperature);
+      const isCattle = a.category === 'cattle';
+      const color = isCattle ? getTempColor(a.temperature) : getCategoryColor(a.category);
       const hexColor = color.replace('#', '');
       const isSelected = selectedAnimal?.id === a.id;
       const borderColor = isSelected ? 'FFD700' : 'ffffff';
-      // Google Maps custom marker using a Data URI SVG icon
+
+      // Status label: temp for cattle, speed/status for vehicles
+      const statusLabel = isCattle
+        ? `${a.temperature}°C`
+        : (a.speed && a.speed > 0 ? `${a.speed} km/h` : a.status || 'Parked');
+
+      // Category icon letter for SVG
+      const iconLetter = isCattle ? '♦' : (a.category === 'motorbike' ? 'M' : 'V');
+
       return `
         (function() {
           var pos = { lat: ${a.latitude}, lng: ${a.longitude} };
@@ -50,14 +66,15 @@ export default function HerdMapView({ animals, safeZone, selectedAnimal, onMarke
             map: map,
             icon: {
               url: 'data:image/svg+xml;utf-8,' + encodeURIComponent(
-                '<svg xmlns="http://www.w3.org/2000/svg" width="60" height="52">' +
-                  '<rect x="1" y="1" width="58" height="32" rx="8" fill="rgba(10,10,20,0.92)" stroke="#${borderColor}" stroke-width="${isSelected ? 2 : 1}"/>' +
-                  '<text x="30" y="14" text-anchor="middle" font-family="sans-serif" font-size="10" font-weight="700" fill="white">${a.name}</text>' +
-                  '<text x="30" y="28" text-anchor="middle" font-family="sans-serif" font-size="12" font-weight="700" fill="#${hexColor}">${a.temperature}°C</text>' +
-                  '<circle cx="30" cy="44" r="8" fill="#${hexColor}" stroke="white" stroke-width="2"/>' +
+                '<svg xmlns="http://www.w3.org/2000/svg" width="64" height="54">' +
+                  '<rect x="1" y="1" width="62" height="34" rx="8" fill="rgba(10,10,20,0.92)" stroke="#${borderColor}" stroke-width="${isSelected ? 2 : 1}"/>' +
+                  '<text x="32" y="15" text-anchor="middle" font-family="sans-serif" font-size="10" font-weight="700" fill="white">${a.name}</text>' +
+                  '<text x="32" y="29" text-anchor="middle" font-family="sans-serif" font-size="11" font-weight="700" fill="#${hexColor}">${statusLabel}</text>' +
+                  '<circle cx="32" cy="46" r="8" fill="#${hexColor}" stroke="white" stroke-width="2"/>' +
+                  '<text x="32" y="50" text-anchor="middle" font-family="sans-serif" font-size="8" font-weight="700" fill="white">${iconLetter}</text>' +
                 '</svg>'
               ),
-              anchor: new google.maps.Point(30, 52),
+              anchor: new google.maps.Point(32, 54),
             },
             title: '${a.name}',
           });
@@ -102,7 +119,7 @@ export default function HerdMapView({ animals, safeZone, selectedAnimal, onMarke
       });
       safeZone.setMap(map);
 
-      // Animal markers
+      // Asset markers (cattle + motorbikes + vehicles)
       ${markersJs}
     }
   </script>

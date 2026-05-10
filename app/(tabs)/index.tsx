@@ -2,7 +2,8 @@
  * HerdFinder - Map Dashboard (Main Screen)
  *
  * - Native (Android/iOS): real react-native-maps + OpenStreetMap tiles
- * - Web: Leaflet.js in iframe (no API key, 100% free)
+ * - Web: Google Maps in iframe
+ * - Supports cattle, motorbikes, and vehicles on the same map
  *
  * TODO: HARDWARE INTEGRATION
  * - Connect to MQTT broker for real-time position/temp updates
@@ -35,6 +36,15 @@ export default function MapScreen() {
   const handleViewDetail = useCallback(() => {
     if (selectedAnimal) router.push(`/animal/${selectedAnimal.id}`);
   }, [selectedAnimal, router]);
+
+  // Counts by category
+  const cattleCount = animals.filter((a) => a.category === 'cattle').length;
+  const bikeCount = animals.filter((a) => a.category === 'motorbike').length;
+  const vehicleCount = animals.filter((a) => a.category === 'vehicle').length;
+  const alertCount = animals.filter((a) =>
+    (a.category === 'cattle' && a.temperature > 39) || a.tamperDetected || a.status === 'Offline'
+  ).length;
+  const onlineCount = animals.filter((a) => a.status !== 'Offline').length;
 
   return (
     <SafeAreaView style={styles.screen}>
@@ -76,31 +86,37 @@ export default function MapScreen() {
         />
       )}
 
-      {/* Quick Stats Bar */}
+      {/* Quick Stats Bar — shows asset counts by category */}
       {!selectedAnimal && (
         <View style={styles.quickStats}>
           <View style={styles.quickStatsRow}>
             <View style={styles.statItem}>
-              <FontAwesome name="paw" size={14} color={Colors.primary} />
-              <Text style={styles.statValue}>{animals.length}</Text>
+              <FontAwesome name="paw" size={14} color={Colors.cattle} />
+              <Text style={styles.statValue}>{cattleCount}</Text>
               <Text style={styles.statLabel}>Cattle</Text>
             </View>
             <View style={styles.statDivider} />
             <View style={styles.statItem}>
-              <FontAwesome name="check-circle" size={14} color={Colors.success} />
-              <Text style={styles.statValue}>{animals.filter((a) => a.temperature <= 38).length}</Text>
-              <Text style={styles.statLabel}>Normal</Text>
+              <FontAwesome name="motorcycle" size={14} color={Colors.motorbike} />
+              <Text style={styles.statValue}>{bikeCount}</Text>
+              <Text style={styles.statLabel}>Bikes</Text>
+            </View>
+            <View style={styles.statDivider} />
+            <View style={styles.statItem}>
+              <FontAwesome name="car" size={14} color={Colors.vehicle} />
+              <Text style={styles.statValue}>{vehicleCount}</Text>
+              <Text style={styles.statLabel}>Vehicles</Text>
             </View>
             <View style={styles.statDivider} />
             <View style={styles.statItem}>
               <FontAwesome name="exclamation-triangle" size={14} color={Colors.danger} />
-              <Text style={styles.statValue}>{animals.filter((a) => a.temperature > 39).length}</Text>
+              <Text style={styles.statValue}>{alertCount}</Text>
               <Text style={styles.statLabel}>Alerts</Text>
             </View>
             <View style={styles.statDivider} />
             <View style={styles.statItem}>
               <FontAwesome name="signal" size={14} color={Colors.success} />
-              <Text style={styles.statValue}>{animals.filter((a) => a.status !== 'Offline').length}</Text>
+              <Text style={styles.statValue}>{onlineCount}</Text>
               <Text style={styles.statLabel}>Online</Text>
             </View>
           </View>
@@ -125,11 +141,11 @@ const styles = StyleSheet.create({
   mapContainer: { flex: 1 },
   quickStats: {
     backgroundColor: Colors.card, borderTopWidth: 1,
-    borderTopColor: Colors.border, paddingVertical: 14, paddingHorizontal: 20,
+    borderTopColor: Colors.border, paddingVertical: 12, paddingHorizontal: 12,
   },
   quickStatsRow: { flexDirection: 'row', justifyContent: 'space-around', alignItems: 'center' },
-  statItem: { alignItems: 'center', gap: 4 },
-  statValue: { color: Colors.textPrimary, fontSize: 18, fontWeight: 'bold' },
-  statLabel: { color: Colors.textSecondary, fontSize: 10, fontWeight: '600' },
-  statDivider: { width: 1, height: 30, backgroundColor: Colors.border },
+  statItem: { alignItems: 'center', gap: 3 },
+  statValue: { color: Colors.textPrimary, fontSize: 16, fontWeight: 'bold' },
+  statLabel: { color: Colors.textSecondary, fontSize: 9, fontWeight: '600' },
+  statDivider: { width: 1, height: 28, backgroundColor: Colors.border },
 });

@@ -1,6 +1,6 @@
 /**
- * AlertItem - Individual alert card for the alerts list
- * Matches the Smart Alerts section in the mockup
+ * AlertItem - Individual alert card
+ * Supports cattle alerts (temp, zone) + vehicle alerts (theft, speeding, tamper)
  */
 
 import React from 'react';
@@ -26,6 +26,12 @@ function getAlertIcon(type: AlertTypeEnum): { name: string; color: string; bg: s
       return { name: 'battery-quarter', color: '#FFFFFF', bg: Colors.warning };
     case 'TAG_TAMPER':
       return { name: 'exclamation-triangle', color: '#FFFFFF', bg: Colors.danger };
+    case 'THEFT_ALERT':
+      return { name: 'lock', color: '#FFFFFF', bg: '#B71C1C' };
+    case 'SPEEDING':
+      return { name: 'tachometer', color: '#FFFFFF', bg: Colors.warning };
+    case 'BUZZER_TRIGGERED':
+      return { name: 'volume-up', color: '#FFFFFF', bg: Colors.motorbike };
     case 'OFFLINE':
       return { name: 'wifi', color: '#FFFFFF', bg: Colors.textMuted };
     default:
@@ -39,7 +45,10 @@ function getAlertLabel(type: AlertTypeEnum): string {
     case 'LEFT_SAFE_ZONE': return 'LEFT SAFE ZONE';
     case 'MOVEMENT_ALERT': return 'MOVEMENT ALERT';
     case 'LOW_BATTERY': return 'LOW BATTERY';
-    case 'TAG_TAMPER': return 'TAG TAMPER';
+    case 'TAG_TAMPER': return 'TAMPER DETECTED';
+    case 'THEFT_ALERT': return 'THEFT ALERT';
+    case 'SPEEDING': return 'SPEEDING';
+    case 'BUZZER_TRIGGERED': return 'BUZZER ALARM';
     case 'OFFLINE': return 'OFFLINE';
     default: return 'ALERT';
   }
@@ -47,9 +56,7 @@ function getAlertLabel(type: AlertTypeEnum): string {
 
 function formatTime(date: Date): string {
   return date.toLocaleTimeString('en-US', {
-    hour: '2-digit',
-    minute: '2-digit',
-    hour12: true,
+    hour: '2-digit', minute: '2-digit', hour12: true,
   });
 }
 
@@ -86,54 +93,23 @@ export default function AlertItem({ alert, onPress }: Props) {
 
 const styles = StyleSheet.create({
   container: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: Colors.card,
-    borderRadius: 14,
-    padding: 14,
-    marginBottom: 10,
-    borderWidth: 1,
-    borderColor: Colors.border,
+    flexDirection: 'row', alignItems: 'center', backgroundColor: Colors.card,
+    borderRadius: 14, padding: 14, marginBottom: 10, borderWidth: 1, borderColor: Colors.border,
   },
-  read: {
-    opacity: 0.6,
-  },
+  read: { opacity: 0.6 },
   iconContainer: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 12,
+    width: 38, height: 38, borderRadius: 19,
+    justifyContent: 'center', alignItems: 'center', marginRight: 12,
   },
-  content: {
-    flex: 1,
-  },
+  content: { flex: 1 },
   topRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 4,
+    flexDirection: 'row', justifyContent: 'space-between',
+    alignItems: 'center', marginBottom: 4,
   },
-  typeLabel: {
-    fontSize: 11,
-    fontWeight: 'bold',
-    letterSpacing: 0.5,
-  },
-  time: {
-    color: Colors.textSecondary,
-    fontSize: 11,
-  },
-  message: {
-    color: Colors.textPrimary,
-    fontSize: 13,
-    lineHeight: 18,
-  },
+  typeLabel: { fontSize: 11, fontWeight: 'bold', letterSpacing: 0.5 },
+  time: { color: Colors.textSecondary, fontSize: 11 },
+  message: { color: Colors.textPrimary, fontSize: 13, lineHeight: 18 },
   unreadDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: Colors.primary,
-    marginLeft: 8,
+    width: 8, height: 8, borderRadius: 4, backgroundColor: Colors.primary, marginLeft: 8,
   },
 });

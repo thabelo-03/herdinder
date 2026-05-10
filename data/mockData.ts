@@ -1,6 +1,6 @@
 /**
  * HerdFinder Mock Data
- * Simulates real data from LoRaWAN ear tags + MikroTik gateway
+ * Simulates real data from LoRaWAN ear tags (cattle) + Dragino TrackerD (motorbikes/vehicles)
  * TODO: HARDWARE INTEGRATION - Replace with real MQTT data from TTN
  */
 
@@ -26,9 +26,12 @@ const BASE_LAT = -20.85;
 const BASE_LNG = 29.05;
 
 export const mockAnimals: Animal[] = [
+  // ==================== CATTLE (Yellow Ear Tags) ====================
   {
     id: '1',
     name: 'Cow 007',
+    category: 'cattle',
+    deviceType: 'ear_tag',
     herdName: 'Herd A',
     location: 'Mat South',
     tagId: 'HF-000007',
@@ -44,6 +47,8 @@ export const mockAnimals: Animal[] = [
   {
     id: '2',
     name: 'Cow 015',
+    category: 'cattle',
+    deviceType: 'ear_tag',
     herdName: 'Herd A',
     location: 'Mat South',
     tagId: 'HF-000015',
@@ -59,6 +64,8 @@ export const mockAnimals: Animal[] = [
   {
     id: '3',
     name: 'Cow 003',
+    category: 'cattle',
+    deviceType: 'ear_tag',
     herdName: 'Herd B',
     location: 'Mat South',
     tagId: 'HF-000003',
@@ -74,6 +81,8 @@ export const mockAnimals: Animal[] = [
   {
     id: '4',
     name: 'Cow 012',
+    category: 'cattle',
+    deviceType: 'ear_tag',
     herdName: 'Herd A',
     location: 'Mat South',
     tagId: 'HF-000012',
@@ -89,6 +98,8 @@ export const mockAnimals: Animal[] = [
   {
     id: '5',
     name: 'Cow 009',
+    category: 'cattle',
+    deviceType: 'ear_tag',
     herdName: 'Herd B',
     location: 'Mat South',
     tagId: 'HF-000009',
@@ -101,6 +112,85 @@ export const mockAnimals: Animal[] = [
     longitude: BASE_LNG - 0.003,
     temperatureHistory: generateTempHistory(37.2),
   },
+
+  // ==================== MOTORBIKES (Dragino TrackerD) ====================
+  {
+    id: '6',
+    name: 'Bike 01',
+    category: 'motorbike',
+    deviceType: 'dragino_tracker',
+    herdName: 'Fleet 1',
+    location: 'Mat South',
+    tagId: 'DT-000001',
+    temperature: 28.3,
+    humidity: 45,
+    battery: 88,
+    status: 'Parked',
+    lastSeen: new Date(Date.now() - 5 * 60 * 1000),
+    distanceFromHome: 0.2,
+    latitude: BASE_LAT + 0.003,
+    longitude: BASE_LNG + 0.018,
+    speed: 0,
+    make: 'Honda',
+    model: 'CG125',
+    plateNumber: 'ABZ 1234',
+    buzzerEnabled: true,
+    tamperDetected: false,
+    motionDetected: false,
+    temperatureHistory: generateTempHistory(28.3),
+  },
+  {
+    id: '7',
+    name: 'Bike 02',
+    category: 'motorbike',
+    deviceType: 'dragino_tracker',
+    herdName: 'Fleet 1',
+    location: 'Mat South',
+    tagId: 'DT-000002',
+    temperature: 35.1,
+    humidity: 38,
+    battery: 72,
+    status: 'Moving',
+    lastSeen: new Date(Date.now() - 30 * 1000),
+    distanceFromHome: 4.8,
+    latitude: BASE_LAT - 0.015,
+    longitude: BASE_LNG + 0.008,
+    speed: 45,
+    make: 'Yamaha',
+    model: 'DT125',
+    plateNumber: 'ABZ 5678',
+    buzzerEnabled: false,
+    tamperDetected: false,
+    motionDetected: true,
+    temperatureHistory: generateTempHistory(35.1),
+  },
+
+  // ==================== VEHICLES (Dragino TrackerD) ====================
+  {
+    id: '8',
+    name: 'Truck 01',
+    category: 'vehicle',
+    deviceType: 'dragino_tracker',
+    herdName: 'Fleet 1',
+    location: 'Mat South',
+    tagId: 'DT-000003',
+    temperature: 31.2,
+    humidity: 42,
+    battery: 95,
+    status: 'Parked',
+    lastSeen: new Date(Date.now() - 15 * 60 * 1000),
+    distanceFromHome: 0.1,
+    latitude: BASE_LAT + 0.001,
+    longitude: BASE_LNG - 0.010,
+    speed: 0,
+    make: 'Toyota',
+    model: 'Hilux',
+    plateNumber: 'ABZ 9012',
+    buzzerEnabled: true,
+    tamperDetected: false,
+    motionDetected: false,
+    temperatureHistory: generateTempHistory(31.2),
+  },
 ];
 
 export const mockAlerts: Alert[] = [
@@ -108,6 +198,7 @@ export const mockAlerts: Alert[] = [
     id: 'a1',
     animalId: '1',
     animalName: 'Cow 007',
+    assetCategory: 'cattle',
     type: 'HIGH_TEMPERATURE',
     message: 'Cow 007 has high temperature (37.8°C)',
     severity: 'critical',
@@ -118,6 +209,7 @@ export const mockAlerts: Alert[] = [
     id: 'a2',
     animalId: '5',
     animalName: 'Cow 009',
+    assetCategory: 'cattle',
     type: 'LEFT_SAFE_ZONE',
     message: 'Cow 009 left the safe zone',
     severity: 'warning',
@@ -128,6 +220,7 @@ export const mockAlerts: Alert[] = [
     id: 'a3',
     animalId: '3',
     animalName: 'Cow 003',
+    assetCategory: 'cattle',
     type: 'MOVEMENT_ALERT',
     message: 'Cow 003 moving faster than normal',
     severity: 'critical',
@@ -136,13 +229,47 @@ export const mockAlerts: Alert[] = [
   },
   {
     id: 'a4',
+    animalId: '7',
+    animalName: 'Bike 02',
+    assetCategory: 'motorbike',
+    type: 'THEFT_ALERT',
+    message: 'Bike 02 motion detected while parked — possible theft!',
+    severity: 'critical',
+    read: false,
+    createdAt: new Date(Date.now() - 10 * 60 * 1000),
+  },
+  {
+    id: 'a5',
+    animalId: '7',
+    animalName: 'Bike 02',
+    assetCategory: 'motorbike',
+    type: 'SPEEDING',
+    message: 'Bike 02 exceeded 60 km/h speed limit (67 km/h)',
+    severity: 'warning',
+    read: false,
+    createdAt: new Date(Date.now() - 45 * 60 * 1000),
+  },
+  {
+    id: 'a6',
     animalId: '4',
     animalName: 'Cow 012',
+    assetCategory: 'cattle',
     type: 'LOW_BATTERY',
     message: 'Cow 012 tag battery is low (15%)',
     severity: 'info',
     read: true,
     createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000),
+  },
+  {
+    id: 'a7',
+    animalId: '6',
+    animalName: 'Bike 01',
+    assetCategory: 'motorbike',
+    type: 'TAG_TAMPER',
+    message: 'Bike 01 tracker tamper detected — device may have been removed',
+    severity: 'critical',
+    read: true,
+    createdAt: new Date(Date.now() - 3 * 60 * 60 * 1000),
   },
 ];
 
