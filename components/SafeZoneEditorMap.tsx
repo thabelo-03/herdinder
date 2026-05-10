@@ -1,8 +1,6 @@
-import { Platform } from 'react-native';
-import NativeMap from './SafeZoneEditorMap.native';
-import WebMap from './SafeZoneEditorMap.web';
-
-export default Platform.select({
-  native: () => NativeMap,
-  default: () => WebMap,
-})();
+/**
+ * Type stub for TypeScript — Metro ignores this file at runtime and
+ * uses SafeZoneEditorMap.native.tsx (Android/iOS) or SafeZoneEditorMap.web.tsx (browser).
+ * This file exists only so the TS compiler can resolve the import.
+ */
+export { default } from './SafeZoneEditorMap.native';

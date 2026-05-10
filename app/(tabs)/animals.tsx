@@ -13,6 +13,7 @@ import { useRouter } from 'expo-router';
 import Colors, { getTempColor, getCategoryColor, getCategoryIcon, getCategoryLabel } from '../../constants/Colors';
 import { useAnimalStore } from '../../store/animalStore';
 import { Animal, AssetCategory } from '../../types';
+import BreathingDot from '../../components/BreathingDot';
 
 function formatLastSeen(date: Date): string {
   const now = new Date();
@@ -81,11 +82,14 @@ export default function AnimalsScreen() {
 
         {/* Status */}
         <View style={styles.statusBadge}>
-          <View style={[styles.statusDot, {
-            backgroundColor: item.status === 'Offline' ? Colors.danger :
-              item.status === 'Moving' ? Colors.success :
-              item.status === 'Parked' ? categoryColor : Colors.textSecondary
-          }]} />
+          {item.status === 'Moving' ? (
+            <BreathingDot color={Colors.success} size={6} style={{ marginRight: 4 }} />
+          ) : (
+            <View style={[styles.statusDot, {
+              backgroundColor: item.status === 'Offline' ? Colors.danger :
+                item.status === 'Parked' ? categoryColor : Colors.textSecondary
+            }]} />
+          )}
           <Text style={styles.statusText}>{item.status}</Text>
         </View>
 

@@ -3,7 +3,7 @@ import { View, Text, StyleSheet } from 'react-native';
 import { MapContainer, TileLayer, Polygon, Marker, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import { Animal, SafeZone } from '../types';
-import { getTempColor } from '../constants/Colors';
+import { getTempColor, getCategoryColor } from '../constants/Colors';
 
 interface Props {
   animals: Animal[];
@@ -21,20 +21,49 @@ function useLeafletCSS() {
       link.rel = 'stylesheet';
       link.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
       document.head.appendChild(link);
+
+      const style = document.createElement('style');
+      style.innerHTML = `
+        @keyframes hf-breathe {
+          0% { transform: scale(1); opacity: 0.7; }
+          50% { transform: scale(2.5); opacity: 0; }
+          100% { transform: scale(2.5); opacity: 0; }
+        }
+        .hf-breathing-dot {
+          position: absolute;
+          width: 30px;
+          height: 30px;
+          border-radius: 50%;
+          top: -4px;
+          left: calc(50% - 15px);
+          animation: hf-breathe 1.5s infinite;
+          pointer-events: none;
+          z-index: 1;
+        }
+      `;
+      document.head.appendChild(style);
     }
   }, []);
 }
 
 function buildIcon(animal: Animal, isSelected: boolean): L.DivIcon {
-  const color = getTempColor(animal.temperature);
+  const isCattle = animal.category === 'cattle';
+  const color = isCattle ? getTempColor(animal.temperature) : getCategoryColor(animal.category);
   const border = isSelected ? '#FFD700' : 'rgba(255,255,255,0.22)';
   const bw = isSelected ? 2 : 1;
+  
+  const iconChar = isCattle ? '🐾' : animal.category === 'motorbike' ? '🏍️' : '🚙';
+  const statusLabel = isCattle ? `${animal.temperature}°C` : (animal.speed && animal.speed > 0 ? `${animal.speed} km/h` : animal.status);
+
+  const breathingHtml = animal.status === 'Moving' 
+    ? `<div class="hf-breathing-dot" style="background-color: ${color}"></div>` 
+    : '';
 
   return L.divIcon({
     className: '',
     iconAnchor: [44, 54],
     html: `
-      <div style="display:flex;flex-direction:column;align-items:center;width:88px">
+      <div style="display:flex;flex-direction:column;align-items:center;width:88px;position:relative;">
         <div style="
           background:rgba(10,10,20,0.92);
           border-radius:10px;
@@ -44,17 +73,24 @@ function buildIcon(animal: Animal, isSelected: boolean): L.DivIcon {
           box-shadow:0 2px 10px rgba(0,0,0,0.7);
           white-space:nowrap;
           width:100%;
+          position:relative;
+          z-index:2;
         ">
           <div style="color:#fff;font-size:11px;font-weight:700;font-family:sans-serif">${animal.name}</div>
-          <div style="color:${color};font-size:13px;font-weight:700;font-family:sans-serif;margin-top:2px">${animal.temperature}°C</div>
+          <div style="color:${color};font-size:13px;font-weight:700;font-family:sans-serif;margin-top:2px">${statusLabel}</div>
         </div>
-        <div style="
-          width:22px;height:22px;border-radius:50%;
-          background:${color};border:2px solid #fff;
-          display:flex;align-items:center;justify-content:center;
-          margin-top:-2px;box-shadow:0 2px 6px rgba(0,0,0,0.6);
-          font-size:11px;line-height:22px;text-align:center;
-        ">🐾</div>
+        <div style="position:relative;display:flex;align-items:center;justify-content:center;margin-top:-2px;">
+          ${breathingHtml}
+          <div style="
+            width:22px;height:22px;border-radius:50%;
+            background:${color};border:2px solid #fff;
+            display:flex;align-items:center;justify-content:center;
+            box-shadow:0 2px 6px rgba(0,0,0,0.6);
+            font-size:11px;line-height:22px;text-align:center;
+            position:relative;
+            z-index:2;
+          ">${iconChar}</div>
+        </div>
       </div>
     `,
   });

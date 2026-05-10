@@ -1,9 +1,10 @@
-import React, { useRef, useState, useCallback } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
-import MapView, { Marker, Polygon, UrlTile } from 'react-native-maps';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
-import Colors, { getTempColor, getCategoryColor, getCategoryIcon } from '../constants/Colors';
+import React, { useCallback, useRef, useState } from 'react';
+import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import MapView, { Marker, Polygon, UrlTile } from 'react-native-maps';
+import Colors, { getCategoryColor, getCategoryIcon, getTempColor } from '../constants/Colors';
 import { Animal, SafeZone } from '../types';
+import BreathingDot from './BreathingDot';
 
 interface Props {
   animals: Animal[];
@@ -48,7 +49,22 @@ export default function HerdMapView({ animals, safeZone, selectedAnimal, onMarke
         toolbarEnabled={false}
         onRegionChangeComplete={(r) => setDelta((r.latitudeDelta + r.longitudeDelta) / 2)}
       >
-        <UrlTile urlTemplate={`https://api.mapbox.com/styles/v1/mapbox/satellite-streets-v12/tiles/256/{z}/{x}/{y}@2x?access_token=${process.env.EXPO_PUBLIC_MAPBOX_KEY}`} maximumZ={19} zIndex={-1} />
+        {/*
+          // Replace UrlTile with your custom OfflineTileOverlay component
+          // This component would be implemented as a native module.
+          // It would check local cache first, then fall back to network if tile not found.
+        */}
+        {/* <OfflineTileOverlay
+          cachePath={NativeModules.TileCacheManager.TILE_CACHE_DIR} // Path to your local tile cache
+          urlTemplate={`https://api.mapbox.com/styles/v1/mapbox/satellite-streets-v12/tiles/512/{z}/{x}/{y}?access_token=${process.env.EXPO_PUBLIC_MAPBOX_KEY}`}
+          maximumZ={19}
+          zIndex={-1}
+          tileSize={512}
+        /> */}
+        {/* For now, keeping UrlTile as a fallback/example */}
+        {/* You would conditionally render OfflineTileOverlay based on network status or user preference */}
+        {/* For demonstration, keeping the UrlTile as is, but conceptually it would be replaced */}
+        <UrlTile urlTemplate={`https://api.mapbox.com/styles/v1/mapbox/satellite-streets-v12/tiles/512/{z}/{x}/{y}?access_token=${process.env.EXPO_PUBLIC_MAPBOX_KEY}`} maximumZ={19} zIndex={-1} tileSize={512} shouldReplaceCustomLayer={false} />
 
         <Polygon coordinates={safeZone.coordinates} strokeColor={Colors.safeZoneBorder} strokeWidth={2} fillColor={Colors.safeZoneFill} lineDashPattern={[8, 6]} />
 
@@ -78,8 +94,13 @@ export default function HerdMapView({ animals, safeZone, selectedAnimal, onMarke
                     {statusLabel}
                   </Text>
                 </View>
-                <View style={[styles.markerPin, { backgroundColor: pinColor }]}>
-                  <FontAwesome name={iconName} size={10} color="#FFF" />
+                <View style={{ alignItems: 'center', justifyContent: 'center' }}>
+                  {animal.status === 'Moving' && (
+                    <BreathingDot color={pinColor} size={30} style={{ position: 'absolute', top: -6 }} />
+                  )}
+                  <View style={[styles.markerPin, { backgroundColor: pinColor }]}>
+                    <FontAwesome name={iconName} size={10} color="#FFF" />
+                  </View>
                 </View>
               </View>
             </Marker>

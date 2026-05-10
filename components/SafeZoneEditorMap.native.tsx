@@ -1,6 +1,6 @@
 import React, { useRef } from 'react';
 import { StyleSheet, View } from 'react-native';
-import MapView, { Marker, Polygon, UrlTile } from 'react-native-maps';
+import MapView, { Marker, Polygon, PROVIDER_DEFAULT, UrlTile } from 'react-native-maps';
 import Colors from '../constants/Colors';
 
 interface Props {
@@ -31,37 +31,47 @@ export default function SafeZoneEditorMapNative({ initialCenter, points, onMapPr
         showsCompass={false}
         toolbarEnabled={false}
         onPress={handlePress}
+        provider={PROVIDER_DEFAULT} // Ensure default provider is used if custom tile overlay is not yet implemented
       >
-        <UrlTile 
-          urlTemplate={`https://api.mapbox.com/styles/v1/mapbox/satellite-streets-v12/tiles/256/{z}/{x}/{y}@2x?access_token=${process.env.EXPO_PUBLIC_MAPBOX_KEY}`} 
-          maximumZ={19} 
-          zIndex={-1} 
-        />
+        {/*
+          // Replace UrlTile with your custom OfflineTileOverlay component
+          // This component would be implemented as a native module.
+          // It would check local cache first, then fall back to network if tile not found.
+        */}
+        {/* <OfflineTileOverlay
+          cachePath={NativeModules.TileCacheManager.TILE_CACHE_DIR} // Path to your local tile cache
+          urlTemplate={`https://api.mapbox.com/styles/v1/mapbox/satellite-streets-v12/tiles/512/{z}/{x}/{y}?access_token=${process.env.EXPO_PUBLIC_MAPBOX_KEY}`}
+          maximumZ={19}
+          zIndex={-1}
+          tileSize={512}
+        /> */}
+        {/* For now, keeping UrlTile as a fallback/example */}
+        <UrlTile urlTemplate={`https://api.mapbox.com/styles/v1/mapbox/satellite-streets-v12/tiles/512/{z}/{x}/{y}?access_token=${process.env.EXPO_PUBLIC_MAPBOX_KEY}`} maximumZ={19} zIndex={-1} tileSize={512} />
 
         {points.length > 2 && (
-          <Polygon 
-            coordinates={points} 
-            strokeColor={Colors.safeZoneBorder} 
-            strokeWidth={2} 
-            fillColor={Colors.safeZoneFill} 
-            lineDashPattern={[8, 6]} 
+          <Polygon
+            coordinates={points}
+            strokeColor={Colors.safeZoneBorder}
+            strokeWidth={2}
+            fillColor={Colors.safeZoneFill}
+            lineDashPattern={[8, 6]}
           />
         )}
 
         {points.length === 2 && (
-          <Polygon 
-            coordinates={points} 
-            strokeColor={Colors.safeZoneBorder} 
-            strokeWidth={2} 
+          <Polygon
+            coordinates={points}
+            strokeColor={Colors.safeZoneBorder}
+            strokeWidth={2}
             fillColor="transparent"
-            lineDashPattern={[8, 6]} 
+            lineDashPattern={[8, 6]}
           />
         )}
 
         {points.map((pt, index) => (
-          <Marker 
-            key={`pt-${index}`} 
-            coordinate={pt} 
+          <Marker
+            key={`pt-${index}`}
+            coordinate={pt}
             anchor={{ x: 0.5, y: 0.5 }}
             tracksViewChanges={false}
           >
