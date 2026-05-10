@@ -1,6 +1,6 @@
 import React, { useRef, useState, useCallback } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
-import MapView, { Marker, Polygon, PROVIDER_GOOGLE } from 'react-native-maps';
+import MapView, { Marker, Polygon, UrlTile } from 'react-native-maps';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import Colors, { getTempColor, getCategoryColor, getCategoryIcon } from '../constants/Colors';
 import { Animal, SafeZone } from '../types';
@@ -12,8 +12,8 @@ interface Props {
   onMarkerPress: (animal: Animal) => void;
 }
 
-const BASE_LAT = -20.85;
-const BASE_LNG = 29.05;
+const BASE_LAT = -21.416589;
+const BASE_LNG = 28.064443;
 const INITIAL_REGION = { latitude: BASE_LAT, longitude: BASE_LNG, latitudeDelta: 0.06, longitudeDelta: 0.06 };
 
 export default function HerdMapView({ animals, safeZone, selectedAnimal, onMarkerPress }: Props) {
@@ -41,14 +41,14 @@ export default function HerdMapView({ animals, safeZone, selectedAnimal, onMarke
       <MapView
         ref={mapRef}
         style={styles.map}
-        provider={PROVIDER_GOOGLE}
-        mapType="hybrid"
+        mapType="none"
         initialRegion={INITIAL_REGION}
         showsUserLocation={false}
         showsCompass={false}
         toolbarEnabled={false}
         onRegionChangeComplete={(r) => setDelta((r.latitudeDelta + r.longitudeDelta) / 2)}
       >
+        <UrlTile urlTemplate={`https://api.mapbox.com/styles/v1/mapbox/satellite-streets-v12/tiles/256/{z}/{x}/{y}@2x?access_token=${process.env.EXPO_PUBLIC_MAPBOX_KEY}`} maximumZ={19} zIndex={-1} />
 
         <Polygon coordinates={safeZone.coordinates} strokeColor={Colors.safeZoneBorder} strokeWidth={2} fillColor={Colors.safeZoneFill} lineDashPattern={[8, 6]} />
 

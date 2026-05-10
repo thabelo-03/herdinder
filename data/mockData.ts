@@ -21,9 +21,9 @@ function generateTempHistory(baseTemp: number): TempReading[] {
   return history;
 }
 
-// Base coordinates for Mat South area
-const BASE_LAT = -20.85;
-const BASE_LNG = 29.05;
+// Base coordinates for Mat South area (updated)
+const BASE_LAT = -21.416589;
+const BASE_LNG = 28.064443;
 
 export const mockAnimals: Animal[] = [
   // ==================== CATTLE (Yellow Ear Tags) ====================
