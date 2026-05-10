@@ -399,10 +399,10 @@ const styles = StyleSheet.create({
     marginRight: 6,
   },
   markerIdText: { color: '#666', fontSize: 10, fontWeight: '700' },
-  markerNameText: { color: '#1A1A2E', fontSize: 13, fontWeight: '900', marginBottom: 2 },
+  markerNameText: { color: '#1A1A2E', fontSize: 15, fontWeight: '900', marginBottom: 2 },
   markerFooter: { flexDirection: 'row', alignItems: 'center' },
-  markerTempText: { fontSize: 11, fontWeight: '800' },
-  markerStatusText: { color: '#888', fontSize: 10, fontWeight: '600', marginLeft: 4 },
+  markerTempText: { fontSize: 14, fontWeight: '900' },
+  markerStatusText: { color: '#888', fontSize: 11, fontWeight: '600', marginLeft: 6 },
   markerPin: {
     width: 12, height: 12, borderRadius: 6,
     borderWidth: 2, borderColor: '#FFF',
