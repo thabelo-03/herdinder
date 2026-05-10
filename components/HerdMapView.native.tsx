@@ -6,7 +6,7 @@ import Colors, { getCategoryColor, getCategoryIcon, getTempColor } from '../cons
 import { MAX_OFFLINE_TILES, StorageManager, TILE_CACHE_DIR } from '../services/storageManager';
 import { Animal, SafeZone } from '../types';
 import BreathingDot from './BreathingDot';
-import OfflineTileOverlay from './OfflineTileOverlay';
+import HFMapOfflineOverlay from './OfflineTileOverlay';
 
 interface Props {
   animals: Animal[];
@@ -15,7 +15,7 @@ interface Props {
   onMarkerPress: (animal: Animal) => void;
 }
 
-interface OfflineTileOverlayProps {
+interface HFMapOfflineOverlayProps {
   cachePath: string;
   urlTemplate?: string;
   maximumZ?: number;
@@ -187,7 +187,7 @@ export default function HerdMapView({ animals, safeZone, selectedAnimal, onMarke
         }}
       >
         {/* Import the custom OfflineTileOverlay component */}
-        <OfflineTileOverlay
+        <HFMapOfflineOverlay
           cachePath={TILE_CACHE_DIR}
           urlTemplate={`https://api.mapbox.com/styles/v1/mapbox/satellite-streets-v12/tiles/512/{z}/{x}/{y}?access_token=${process.env.EXPO_PUBLIC_MAPBOX_KEY}`}
           maximumZ={19}

@@ -13,23 +13,33 @@ interface OfflineTileOverlayProps {
 }
 
 /**
- * Fallback to react-native-maps' built-in UrlTile for mobile.
- * This avoids "View config not found" errors when the custom native bridge
- * hasn't been compiled into the current development build.
+ * Using UrlTile from react-native-maps.
+ * Note: Mapbox tiles require a PUBLIC TOKEN (pk....), not a secret key (sk....).
  */
-const OfflineTileOverlay = (props: OfflineTileOverlayProps) => {
+export default function HFMapOfflineOverlay(props: OfflineTileOverlayProps) {
+    // Native layers often expect a raw path without the "file://" prefix
+    const cleanPath = props.cachePath ? props.cachePath.replace('file://', '') : undefined;
+
+    if (__DEV__) {
+        console.log('[HFMapOfflineOverlay] urlTemplate:', props.urlTemplate);
+        console.log('[HFMapOfflineOverlay] cachePath:', cleanPath);
+    }
+
+    // Fallback if urlTemplate is missing to prevent crashes
+    if (!props.urlTemplate) {
+        return null;
+    }
+
     return (
         <UrlTile
             urlTemplate={props.urlTemplate}
-            zIndex={props.zIndex}
-            maximumZ={props.maximumZ}
-            tileSize={props.tileSize}
+            zIndex={props.zIndex ?? -1}
+            maximumZ={props.maximumZ ?? 19}
+            tileSize={props.tileSize ?? 256}
             // @ts-ignore - tileCachePath and offlineMode are supported on Android
-            offlineMode={true}
-            tileCachePath={props.cachePath}
-            opacity={props.opacity}
+            offlineMode={false} 
+            tileCachePath={cleanPath}
+            opacity={props.opacity ?? 1}
         />
     );
-};
-
-export default OfflineTileOverlay;
+}
