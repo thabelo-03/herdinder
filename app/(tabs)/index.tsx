@@ -16,6 +16,7 @@ import React, { useCallback } from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import AnimalDetailCard from '../../components/AnimalDetailCard';
+import CriticalAlertOverlay from '../../components/CriticalAlertOverlay';
 import GatewayBanner from '../../components/GatewayBanner';
 import Colors from '../../constants/Colors';
 import { useAnimalStore } from '../../store/animalStore';
@@ -49,6 +50,9 @@ export default function MapScreen() {
 
   return (
     <SafeAreaView style={styles.screen} edges={['top']}>
+
+      {/* Floating Critical Alert Overlay */}
+      <CriticalAlertOverlay />
 
       {/* Header */}
       <View style={styles.header}>

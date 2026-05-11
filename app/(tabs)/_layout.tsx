@@ -1,9 +1,10 @@
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { Tabs } from 'expo-router';
-import React from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import React, { useEffect, useRef } from 'react';
+import { Animated, StyleSheet, Text, View } from 'react-native';
 import Colors from '../../constants/Colors';
 import { useAlertStore } from '../../store/alertStore';
+import { AlertType } from '../../types';
 
 function TabBarIcon(props: {
   name: React.ComponentProps<typeof FontAwesome>['name'];
@@ -12,13 +13,51 @@ function TabBarIcon(props: {
   return <FontAwesome size={22} style={{ marginBottom: -2 }} {...props} />;
 }
 
-function AlertBadge() {
-  const unreadCount = useAlertStore((s) => s.unreadCount);
-  if (unreadCount === 0) return null;
+function AlertBadge({ types }: { types?: AlertType[] }) {
+  const pulseAnim = useRef(new Animated.Value(1)).current;
+  const alerts = useAlertStore((s) => s.alerts);
+
+  const filteredAlerts = alerts.filter(a =>
+    !a.read && (!types || types.includes(a.type))
+  );
+
+  const count = filteredAlerts.length;
+
+  if (count === 0) return null;
+
+  // Determine the badge color based on the highest severity present
+  const hasCritical = filteredAlerts.some(a => a.severity === 'critical');
+  const hasWarning = filteredAlerts.some(a => a.severity === 'warning');
+
+  const badgeColor = hasCritical ? Colors.danger : hasWarning ? Colors.warning : Colors.info;
+
+  useEffect(() => {
+    if (hasCritical) {
+      // Loop a scaling animation back and forth
+      Animated.loop(
+        Animated.sequence([
+          Animated.timing(pulseAnim, {
+            toValue: 1.25,
+            duration: 600,
+            useNativeDriver: true,
+          }),
+          Animated.timing(pulseAnim, {
+            toValue: 1,
+            duration: 600,
+            useNativeDriver: true,
+          }),
+        ])
+      ).start();
+    } else {
+      pulseAnim.stopAnimation();
+      pulseAnim.setValue(1);
+    }
+  }, [hasCritical, pulseAnim]);
+
   return (
-    <View style={styles.badge}>
-      <Text style={styles.badgeText}>{unreadCount > 9 ? '9+' : unreadCount}</Text>
-    </View>
+    <Animated.View style={[styles.badge, { backgroundColor: badgeColor, transform: [{ scale: pulseAnim }] }]}>
+      <Text style={styles.badgeText}>{count > 9 ? '9+' : count}</Text>
+    </Animated.View>
   );
 }
 
@@ -51,7 +90,12 @@ export default function TabLayout() {
         options={{
           title: 'Map',
           headerShown: false,
-          tabBarIcon: ({ color }) => <TabBarIcon name="map-marker" color={color} />,
+          tabBarIcon: ({ color }) => (
+            <View>
+              <TabBarIcon name="map-marker" color={color} />
+              <AlertBadge types={['LEFT_SAFE_ZONE', 'MOVEMENT_ALERT', 'TAG_TAMPER', 'THEFT_ALERT']} />
+            </View>
+          ),
         }}
       />
       <Tabs.Screen
@@ -59,7 +103,12 @@ export default function TabLayout() {
         options={{
           title: 'Animals',
           headerShown: false,
-          tabBarIcon: ({ color }) => <TabBarIcon name="paw" color={color} />,
+          tabBarIcon: ({ color }) => (
+            <View>
+              <TabBarIcon name="paw" color={color} />
+              <AlertBadge types={['HIGH_TEMPERATURE', 'LOW_BATTERY', 'OFFLINE', 'SPEEDING', 'BUZZER_TRIGGERED']} />
+            </View>
+          ),
         }}
       />
       <Tabs.Screen
@@ -100,7 +149,6 @@ const styles = StyleSheet.create({
     position: 'absolute',
     right: -8,
     top: -4,
-    backgroundColor: Colors.badgeRed,
     borderRadius: 9,
     width: 18,
     height: 18,
