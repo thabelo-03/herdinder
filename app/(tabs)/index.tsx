@@ -10,15 +10,16 @@
  * - Replace mock coordinates with actual gateway triangulation data
  */
 
-import React, { useCallback } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView } from 'react-native';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { useRouter } from 'expo-router';
+import React, { useCallback } from 'react';
+import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import AnimalDetailCard from '../../components/AnimalDetailCard';
+import GatewayBanner from '../../components/GatewayBanner';
 import Colors from '../../constants/Colors';
 import { useAnimalStore } from '../../store/animalStore';
 import { Animal } from '../../types';
-import GatewayBanner from '../../components/GatewayBanner';
-import AnimalDetailCard from '../../components/AnimalDetailCard';
 // Metro automatically picks HerdMapView.native.tsx on device and HerdMapView.web.tsx on browser
 import HerdMapView from '../../components/HerdMapView';
 
@@ -47,7 +48,7 @@ export default function MapScreen() {
   const onlineCount = animals.filter((a) => a.status !== 'Offline').length;
 
   return (
-    <SafeAreaView style={styles.screen}>
+    <SafeAreaView style={styles.screen} edges={['top']}>
 
       {/* Header */}
       <View style={styles.header}>

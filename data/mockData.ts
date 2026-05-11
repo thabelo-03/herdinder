@@ -4,7 +4,7 @@
  * TODO: HARDWARE INTEGRATION - Replace with real MQTT data from TTN
  */
 
-import { Animal, Alert, Gateway, SafeZone, TempReading } from '../types';
+import { Alert, Animal, Gateway, SafeZone, TempReading } from '../types';
 
 // Generate 24h temperature history
 function generateTempHistory(baseTemp: number): TempReading[] {
@@ -52,7 +52,7 @@ export const mockAnimals: Animal[] = [
     herdName: 'Herd A',
     location: 'Mat South',
     tagId: 'HF-000015',
-    temperature: 36.7,
+    temperature: 39.7,
     battery: 92,
     status: 'Stationary',
     lastSeen: new Date(Date.now() - 1 * 60 * 1000),
@@ -289,7 +289,7 @@ const generateCirclePolygon = (centerLat: number, centerLng: number, radiusKm: n
   const coords = [];
   const latRatio = 111.32; // km per degree latitude
   const lngRatio = 111.32 * Math.cos(centerLat * Math.PI / 180); // km per degree longitude
-  
+
   for (let i = 0; i < points; i++) {
     const angle = (i * 2 * Math.PI) / points;
     coords.push({

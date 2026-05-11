@@ -1,4 +1,4 @@
-import * as FileSystem from 'expo-file-system/legacy';
+import * as FileSystem from 'expo-file-system';
 import * as SQLite from 'expo-sqlite';
 import { Alert, DeviceEventEmitter } from 'react-native';
 
@@ -30,35 +30,39 @@ const PRUNE_TARGET_RATIO = 0.8; // Reduce to 80% of limit when pruning (400MB)
 export const MAX_OFFLINE_TILES = 1000;
 
 // Database singleton
-let _db: SQLite.SQLiteDatabase | null = null;
+let _dbPromise: Promise<SQLite.SQLiteDatabase> | null = null;
 
 async function getDb(): Promise<SQLite.SQLiteDatabase> {
-    if (_db) return _db;
-    
-    _db = await SQLite.openDatabaseAsync('map_cache.db');
-    
-    // Initialize schema
-    await _db.execAsync(`
-      CREATE TABLE IF NOT EXISTS tiles (
-        uri TEXT PRIMARY KEY,
-        z INTEGER,
-        x INTEGER,
-        y INTEGER,
-        size INTEGER,
-        last_accessed INTEGER
-      );
-      CREATE INDEX IF NOT EXISTS idx_last_accessed ON tiles(last_accessed);
-    `);
+    if (_dbPromise) return _dbPromise;
 
-    // Migration helper to check and add columns if they are missing.
-    const tableInfo = await _db.getAllAsync<{ name: string }>('PRAGMA table_info(tiles)');
-    const columns = tableInfo.map(c => c.name);
-    
-    if (!columns.includes('z')) await _db.execAsync('ALTER TABLE tiles ADD COLUMN z INTEGER');
-    if (!columns.includes('x')) await _db.execAsync('ALTER TABLE tiles ADD COLUMN x INTEGER');
-    if (!columns.includes('y')) await _db.execAsync('ALTER TABLE tiles ADD COLUMN y INTEGER');
+    _dbPromise = (async () => {
+        const db = await SQLite.openDatabaseAsync('map_cache.db');
 
-    return _db;
+        // Initialize schema
+        await db.execAsync(`
+          CREATE TABLE IF NOT EXISTS tiles (
+            uri TEXT PRIMARY KEY,
+            z INTEGER,
+            x INTEGER,
+            y INTEGER,
+            size INTEGER,
+            last_accessed INTEGER
+          );
+          CREATE INDEX IF NOT EXISTS idx_last_accessed ON tiles(last_accessed);
+        `);
+
+        // Migration helper to check and add columns if they are missing.
+        const tableInfo = await db.getAllAsync<{ name: string }>('PRAGMA table_info(tiles)');
+        const columns = tableInfo.map(c => c.name);
+
+        if (!columns.includes('z')) await db.execAsync('ALTER TABLE tiles ADD COLUMN z INTEGER');
+        if (!columns.includes('x')) await db.execAsync('ALTER TABLE tiles ADD COLUMN x INTEGER');
+        if (!columns.includes('y')) await db.execAsync('ALTER TABLE tiles ADD COLUMN y INTEGER');
+
+        return db;
+    })();
+
+    return _dbPromise;
 }
 
 export const StorageManager = {
@@ -95,7 +99,7 @@ export const StorageManager = {
     async syncFileSystemToIndex(): Promise<void> {
         const diskTiles = await this.getAllTilesFromFS();
         const db = await getDb();
-        
+
         await db.withTransactionAsync(async () => {
             await db.runAsync('DELETE FROM tiles');
             for (const tile of diskTiles) {

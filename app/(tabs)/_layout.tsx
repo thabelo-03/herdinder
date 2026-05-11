@@ -1,7 +1,7 @@
-import React from 'react';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { Tabs } from 'expo-router';
-import { View, Text, StyleSheet } from 'react-native';
+import React from 'react';
+import { StyleSheet, Text, View } from 'react-native';
 import Colors from '../../constants/Colors';
 import { useAlertStore } from '../../store/alertStore';
 
@@ -32,9 +32,6 @@ export default function TabLayout() {
           backgroundColor: Colors.tabBarBackground,
           borderTopColor: Colors.border,
           borderTopWidth: 1,
-          height: 60,
-          paddingBottom: 8,
-          paddingTop: 6,
         },
         tabBarLabelStyle: {
           fontSize: 11,

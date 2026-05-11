@@ -3,17 +3,22 @@
  * Filter by category (All / Cattle / Motorbikes / Vehicles)
  */
 
-import React, { useState } from 'react';
-import {
-  View, Text, StyleSheet, FlatList, TextInput,
-  TouchableOpacity, SafeAreaView,
-} from 'react-native';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { useRouter } from 'expo-router';
-import Colors, { getTempColor, getCategoryColor, getCategoryIcon, getCategoryLabel } from '../../constants/Colors';
+import React, { useState } from 'react';
+import {
+  FlatList,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import BreathingDot from '../../components/BreathingDot';
+import Colors, { getCategoryColor, getCategoryIcon, getTempColor } from '../../constants/Colors';
 import { useAnimalStore } from '../../store/animalStore';
 import { Animal, AssetCategory } from '../../types';
-import BreathingDot from '../../components/BreathingDot';
 
 function formatLastSeen(date: Date): string {
   const now = new Date();
@@ -112,7 +117,7 @@ export default function AnimalsScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.screen}>
+    <SafeAreaView style={styles.screen} edges={['top']}>
       {/* Header */}
       <View style={styles.header}>
         <Text style={styles.headerTitle}>Assets</Text>
