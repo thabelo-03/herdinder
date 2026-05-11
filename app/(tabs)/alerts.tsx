@@ -32,13 +32,14 @@ export default function AlertsScreen() {
   const markAllAsRead = useAlertStore((s) => s.markAllAsRead);
   const unreadCount = useAlertStore((s) => s.unreadCount);
 
-  const filteredAlerts = filter === 'ALL'
+  const filteredAlerts = (filter === 'ALL'
     ? alerts
-    : alerts.filter((a) => a.type === filter);
+    : alerts.filter((a) => a.type === filter)
+  ).sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
 
   // Summary counts
-  const cattleAlerts = alerts.filter((a) => a.assetCategory === 'cattle' && !a.read).length;
-  const vehicleAlerts = alerts.filter((a) => (a.assetCategory === 'motorbike' || a.assetCategory === 'vehicle') && !a.read).length;
+  const cattleAlerts = alerts.filter((a) => a?.assetCategory === 'cattle' && !a.read).length;
+  const vehicleAlerts = alerts.filter((a) => a && (a.assetCategory === 'motorbike' || a.assetCategory === 'vehicle') && !a.read).length;
 
   return (
     <SafeAreaView style={styles.screen}>

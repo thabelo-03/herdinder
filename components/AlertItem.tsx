@@ -60,7 +60,8 @@ function getAlertLabel(type: AlertTypeEnum): string {
   }
 }
 
-function formatTime(date: Date): string {
+function formatTime(date: any): string {
+  if (!date || !(date instanceof Date)) return '---';
   return date.toLocaleTimeString('en-US', {
     hour: '2-digit', minute: '2-digit', hour12: true,
   });

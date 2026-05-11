@@ -38,6 +38,7 @@ export default function MapScreen() {
   const toggleLockdown = useAnimalStore((s) => s.toggleLockdown);
   const showHeatmap = useAnimalStore((s) => s.showHeatmap);
   const toggleHeatmap = useAnimalStore((s) => s.toggleHeatmap);
+
   const [filter, setFilter] = useState<string | null>(null);
   const [isSyncing, setIsSyncing] = useState(false);
   const [syncProgress, setSyncProgress] = useState(0);
