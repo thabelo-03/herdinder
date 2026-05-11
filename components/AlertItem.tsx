@@ -24,6 +24,10 @@ function getAlertIcon(type: AlertTypeEnum): { name: string; color: string; bg: s
       return { name: 'bolt', color: '#FFFFFF', bg: Colors.danger };
     case 'LOW_BATTERY':
       return { name: 'battery-quarter', color: '#FFFFFF', bg: Colors.warning };
+    case 'HEALTH_WARNING':
+      return { name: 'medkit', color: '#FFFFFF', bg: Colors.info };
+    case 'ISOLATION_ALERT':
+      return { name: 'users', color: '#FFFFFF', bg: Colors.warning };
     case 'TAG_TAMPER':
       return { name: 'exclamation-triangle', color: '#FFFFFF', bg: Colors.danger };
     case 'THEFT_ALERT':
@@ -45,6 +49,8 @@ function getAlertLabel(type: AlertTypeEnum): string {
     case 'LEFT_SAFE_ZONE': return 'LEFT SAFE ZONE';
     case 'MOVEMENT_ALERT': return 'MOVEMENT ALERT';
     case 'LOW_BATTERY': return 'LOW BATTERY';
+    case 'HEALTH_WARNING': return 'HEALTH WARNING';
+    case 'ISOLATION_ALERT': return 'ISOLATION ALERT';
     case 'TAG_TAMPER': return 'TAMPER DETECTED';
     case 'THEFT_ALERT': return 'THEFT ALERT';
     case 'SPEEDING': return 'SPEEDING';

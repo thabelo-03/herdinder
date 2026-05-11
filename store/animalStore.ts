@@ -15,6 +15,7 @@ interface AnimalState {
   safeZone: SafeZone;
   isLoading: boolean;
   isLockdownMode: boolean;
+  showHeatmap: boolean;
   
   // Actions
   setAnimals: (animals: Animal[]) => void;
@@ -25,6 +26,8 @@ interface AnimalState {
   updateSafeZone: (safeZone: SafeZone) => void;
   loadMockData: () => void;
   toggleLockdown: () => void;
+  toggleHeatmap: () => void;
+  triggerBuzzer: (animalId: string) => void;
   
   // HARDWARE INTEGRATION
   connectMQTT: () => void;
@@ -38,6 +41,7 @@ export const useAnimalStore = create<AnimalState>((set) => ({
   safeZone: mockSafeZone,
   isLoading: false,
   isLockdownMode: false,
+  showHeatmap: false,
   
   setAnimals: (animals) => set({ animals }),
   
@@ -56,6 +60,26 @@ export const useAnimalStore = create<AnimalState>((set) => ({
   updateSafeZone: (safeZone) => set({ safeZone }),
 
   toggleLockdown: () => set((state) => ({ isLockdownMode: !state.isLockdownMode })),
+  
+  toggleHeatmap: () => set((state) => ({ showHeatmap: !state.showHeatmap })),
+
+  triggerBuzzer: (animalId) => {
+    const animal = get().animals.find(a => a.id === animalId);
+    if (!animal) return;
+    
+    const newStatus = !animal.buzzerEnabled;
+    
+    // Update local state
+    set((state) => ({
+      animals: state.animals.map(a => 
+        a.id === animalId ? { ...a, buzzerEnabled: newStatus } : a
+      )
+    }));
+
+    // Send hardware command
+    const { sendBuzzerDownlink } = require('../services/mqtt');
+    sendBuzzerDownlink(animal.tagId, newStatus);
+  },
   
   loadMockData: () => set({
     animals: mockAnimals,

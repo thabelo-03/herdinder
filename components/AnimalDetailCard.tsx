@@ -8,6 +8,8 @@ import React, { useRef } from 'react';
 import { Linking, ScrollView, StyleSheet, Text, TouchableOpacity, View, Animated, PanResponder } from 'react-native';
 import Colors, { getCategoryColor, getCategoryIcon, getCategoryLabel, getTempColor, getTempStatus } from '../constants/Colors';
 import { Animal, SafeZone } from '../types';
+import { useAlertStore } from '../store/alertStore';
+import { useAnimalStore } from '../store/animalStore';
 import HerdMapView from './HerdMapView';
 import TempChart from './TempChart';
 
@@ -138,6 +140,22 @@ export default function AnimalDetailCard({ animal, onClose, onViewDetail, safeZo
             </View>
           </View>
         </TouchableOpacity>
+
+        {/* Remote Buzzer Action for Vehicles */}
+        {!isCattle && (
+          <View style={styles.buzzerSection}>
+            <TouchableOpacity 
+              style={[styles.buzzerBtn, animal.buzzerEnabled && styles.buzzerBtnActive]} 
+              onPress={() => useAnimalStore.getState().triggerBuzzer(animal.id)}
+            >
+              <FontAwesome name="bullhorn" size={20} color={animal.buzzerEnabled ? '#FFF' : categoryColor} />
+              <Text style={[styles.buzzerBtnText, animal.buzzerEnabled && { color: '#FFF' }]}>
+                {animal.buzzerEnabled ? 'STOP ALARM' : 'TRIGGER BUZZER'}
+              </Text>
+            </TouchableOpacity>
+            <Text style={styles.buzzerSub}>Use this to scare off thieves or locate the vehicle</Text>
+          </View>
+        )}
 
         {/* Small Map Preview */}
         {safeZone && (
@@ -306,4 +324,20 @@ const styles = StyleSheet.create({
     shadowColor: '#25D366', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.2, shadowRadius: 8, elevation: 4,
   },
   shareBtnText: { color: '#FFFFFF', fontSize: 15, fontWeight: 'bold' },
+  buzzerSection: {
+    paddingHorizontal: 4,
+    marginBottom: 20,
+    alignItems: 'center',
+  },
+  buzzerBtn: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+    backgroundColor: Colors.card, borderRadius: 12, paddingVertical: 14, gap: 12,
+    width: '100%', borderWidth: 2, borderColor: Colors.border,
+  },
+  buzzerBtnActive: {
+    backgroundColor: Colors.danger, borderColor: Colors.danger,
+    shadowColor: Colors.danger, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 10, elevation: 6,
+  },
+  buzzerBtnText: { fontSize: 15, fontWeight: '900', letterSpacing: 0.5, color: Colors.textPrimary },
+  buzzerSub: { color: Colors.textMuted, fontSize: 11, marginTop: 8, textAlign: 'center' },
 });

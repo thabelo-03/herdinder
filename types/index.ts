@@ -33,6 +33,7 @@ export interface Animal {
   prevDistanceFromHome?: number;
   speed?: number;                // km/h — GPS trackers only
   temperatureHistory: TempReading[];
+  positionHistory: { latitude: number; longitude: number; timestamp: Date }[];
   // Vehicle-specific
   plateNumber?: string;
   make?: string;                 // e.g., "Honda", "Yamaha"
@@ -68,6 +69,8 @@ export type AlertType =
   | 'MOVEMENT_ALERT'
   | 'LOW_BATTERY'
   | 'TAG_TAMPER'
+  | 'HEALTH_WARNING'
+  | 'ISOLATION_ALERT'
   | 'THEFT_ALERT'        // Motion detected on parked vehicle
   | 'SPEEDING'           // Vehicle exceeding speed limit
   | 'BUZZER_TRIGGERED'   // Dragino buzzer alarm activated

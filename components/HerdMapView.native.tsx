@@ -1,7 +1,7 @@
 import { FontAwesome } from '@expo/vector-icons';
 import React, { useCallback, useRef, useState } from 'react';
 import { Alert, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import MapView, { LatLng, Marker, Polygon, Region } from 'react-native-maps';
+import MapView, { Heatmap, LatLng, Marker, Polygon, Region } from 'react-native-maps';
 import Colors, { getCategoryColor, getCategoryIcon, getTempColor } from '../constants/Colors';
 import { MAX_OFFLINE_TILES, StorageManager, TILE_CACHE_DIR } from '../services/storageManager';
 import { Animal, SafeZone } from '../types';
@@ -13,6 +13,7 @@ interface Props {
   selectedAnimal: Animal | null;
   onMarkerPress: (animal: Animal) => void;
   isPreview?: boolean;
+  showHeatmap?: boolean;
 }
 
 interface HFMapOfflineOverlayProps {
@@ -34,7 +35,8 @@ export default function HerdMapView({
   safeZone,
   selectedAnimal,
   onMarkerPress,
-  isPreview = false
+  isPreview = false,
+  showHeatmap = false,
 }: Props) {
   const mapRef = useRef<MapView>(null);
   const [delta, setDelta] = useState(0.06);
@@ -188,6 +190,13 @@ export default function HerdMapView({
     w: downloadRegion.longitude - downloadRegion.longitudeDelta / 2,
   };
 
+  // Collect all points for heatmap
+  const heatmapPoints = animals.flatMap(a => (a.positionHistory || []).map(p => ({
+    latitude: p.latitude,
+    longitude: p.longitude,
+    weight: 1,
+  })));
+
   return (
     <View style={styles.container}>
       <MapView
@@ -278,6 +287,19 @@ export default function HerdMapView({
             zIndex={-1}
           />
         ))}
+
+        {showHeatmap && heatmapPoints.length > 0 && (
+          <Heatmap
+            points={heatmapPoints}
+            radius={40}
+            opacity={0.7}
+            gradient={{
+              colors: [Colors.success, Colors.warning, Colors.danger],
+              startPoints: [0.01, 0.4, 0.8],
+              colorMapSize: 256,
+            }}
+          />
+        )}
 
         <Polygon coordinates={safeZone.coordinates} strokeColor={Colors.safeZoneBorder} strokeWidth={2} fillColor={Colors.safeZoneFill} lineDashPattern={[8, 6]} />
 

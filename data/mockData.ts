@@ -21,6 +21,25 @@ function generateTempHistory(baseTemp: number): TempReading[] {
   return history;
 }
 
+// Generate 24h position history for grazing heatmaps
+function generatePositionHistory(centerLat: number, centerLng: number, radiusKm: number): { latitude: number; longitude: number; timestamp: Date }[] {
+  const history: { latitude: number; longitude: number; timestamp: Date }[] = [];
+  const now = new Date();
+  for (let i = 48; i >= 0; i--) { // 48 points (every 30 mins)
+    const timestamp = new Date(now.getTime() - i * 30 * 60 * 1000);
+    // Bias positions slightly so they form "clumps" (grazing hotspots)
+    const hotspotFactor = Math.sin(i / 5); 
+    const r = Math.sqrt(Math.random()) * radiusKm * (0.5 + 0.5 * hotspotFactor);
+    const angle = Math.random() * Math.PI * 2;
+    history.push({
+      latitude: centerLat + (r / 111.32) * Math.sin(angle),
+      longitude: centerLng + (r / (111.32 * Math.cos(centerLat * Math.PI / 180))) * Math.cos(angle),
+      timestamp,
+    });
+  }
+  return history;
+}
+
 // Base coordinates for Mat South area (updated)
 const BASE_LAT = -21.416589;
 const BASE_LNG = 28.064443;
@@ -44,6 +63,7 @@ export const mockAnimals: Animal[] = [
     latitude: BASE_LAT + 0.008,
     longitude: BASE_LNG + 0.005,
     temperatureHistory: generateTempHistory(37.8),
+    positionHistory: generatePositionHistory(BASE_LAT + 0.008, BASE_LNG + 0.005, 0.5),
   },
   {
     id: '2',
@@ -62,6 +82,7 @@ export const mockAnimals: Animal[] = [
     latitude: BASE_LAT + 0.015,
     longitude: BASE_LNG - 0.005,
     temperatureHistory: generateTempHistory(36.7),
+    positionHistory: generatePositionHistory(BASE_LAT + 0.015, BASE_LNG - 0.005, 0.3),
   },
   {
     id: '3',
@@ -80,6 +101,7 @@ export const mockAnimals: Animal[] = [
     latitude: BASE_LAT + 0.012,
     longitude: BASE_LNG + 0.015,
     temperatureHistory: generateTempHistory(36.5),
+    positionHistory: generatePositionHistory(BASE_LAT + 0.012, BASE_LNG + 0.015, 0.4),
   },
   {
     id: '4',
@@ -98,6 +120,7 @@ export const mockAnimals: Animal[] = [
     latitude: BASE_LAT - 0.002,
     longitude: BASE_LNG + 0.012,
     temperatureHistory: generateTempHistory(36.6),
+    positionHistory: generatePositionHistory(BASE_LAT - 0.002, BASE_LNG + 0.012, 0.2),
   },
   {
     id: '5',
@@ -115,6 +138,7 @@ export const mockAnimals: Animal[] = [
     latitude: BASE_LAT - 0.008,
     longitude: BASE_LNG - 0.003,
     temperatureHistory: generateTempHistory(37.2),
+    positionHistory: generatePositionHistory(BASE_LAT - 0.008, BASE_LNG - 0.003, 0.4),
   },
 
   // ==================== MOTORBIKES (Dragino TrackerD) ====================
@@ -142,6 +166,7 @@ export const mockAnimals: Animal[] = [
     tamperDetected: false,
     motionDetected: false,
     temperatureHistory: generateTempHistory(28.3),
+    positionHistory: generatePositionHistory(BASE_LAT + 0.003, BASE_LNG + 0.018, 0.1),
   },
   {
     id: '7',
@@ -167,6 +192,7 @@ export const mockAnimals: Animal[] = [
     tamperDetected: false,
     motionDetected: true,
     temperatureHistory: generateTempHistory(35.1),
+    positionHistory: generatePositionHistory(BASE_LAT - 0.015, BASE_LNG + 0.008, 0.6),
   },
 
   // ==================== VEHICLES (Dragino TrackerD) ====================
@@ -194,6 +220,7 @@ export const mockAnimals: Animal[] = [
     tamperDetected: false,
     motionDetected: false,
     temperatureHistory: generateTempHistory(31.2),
+    positionHistory: generatePositionHistory(BASE_LAT + 0.001, BASE_LNG - 0.010, 0.05),
   },
 ];
 

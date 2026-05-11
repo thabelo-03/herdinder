@@ -110,6 +110,92 @@ export function processUplink(payload: TTNUplink): void {
     
     // Check alert rules
     checkAlertRules(animal.id, animal.name, decoded.temperature, decoded.battery, status, lastMovedAt, animal, newDist);
+
+    // AI Health Early Warning Check
+    if (animal.category === 'cattle') {
+      checkHealthDeviations(animal, decoded.temperature);
+      checkSocialIsolation(animal, store.animals);
+    }
+  }
+}
+
+/**
+ * Social Isolation Detection
+ * Checks if a cow is too far from its peers
+ */
+function checkSocialIsolation(animal: any, allAnimals: any[]) {
+  const alertStore = useAlertStore.getState();
+  
+  // Find other cattle in the same herd
+  const peers = allAnimals.filter(a => 
+    a.id !== animal.id && 
+    a.category === 'cattle' && 
+    a.herdName === animal.herdName
+  );
+  
+  if (peers.length === 0) return;
+  
+  // Find distance to the NEAREST peer
+  let minDistance = Infinity;
+  peers.forEach(peer => {
+    const dist = calculateDistance(animal.latitude, animal.longitude, peer.latitude, peer.longitude);
+    if (dist < minDistance) minDistance = dist;
+  });
+  
+  // If nearest peer is > 200m (0.2km) away
+  if (minDistance > 0.2) {
+    alertStore.addAlert({
+      id: `alert-iso-${animal.id}-${Date.now()}`,
+      animalId: animal.id,
+      animalName: animal.name,
+      type: 'ISOLATION_ALERT',
+      message: `ISOLATION ALERT: ${animal.name} is ${Math.round(minDistance * 1000)}m away from the herd. Possible injury or distress.`,
+      severity: 'warning',
+      read: false,
+      createdAt: new Date(),
+    });
+  }
+}
+
+/**
+ * AI Health Early Warning Logic
+ * Tracks deviations from 7-day averages
+ */
+function checkHealthDeviations(animal: any, currentTemp: number) {
+  const alertStore = useAlertStore.getState();
+  
+  // 1. Calculate Average Temperature (from 24h history)
+  if (!animal.temperatureHistory || animal.temperatureHistory.length < 5) return;
+  
+  const avgTemp = animal.temperatureHistory.reduce((sum: number, r: any) => sum + r.temperature, 0) / animal.temperatureHistory.length;
+  
+  // 2. Calculate Movement Intensity (total distance traveled in history)
+  if (!animal.positionHistory || animal.positionHistory.length < 10) return;
+  
+  let totalDistance = 0;
+  for (let i = 1; i < animal.positionHistory.length; i++) {
+    const p1 = animal.positionHistory[i-1];
+    const p2 = animal.positionHistory[i];
+    totalDistance += calculateDistance(p1.latitude, p1.longitude, p2.latitude, p2.longitude);
+  }
+  
+  // We assume the average movement intensity for a healthy cow is ~2km/day in our mock data
+  // In a real system, we would calculate this over 7 days.
+  const baselineMovement = 2.0; 
+  const movementDrop = totalDistance < (baselineMovement * 0.6); // 40% less than baseline
+  const tempSpike = currentTemp > (avgTemp + 1.0); // 1°C above average
+  
+  if (tempSpike && movementDrop) {
+    alertStore.addAlert({
+      id: `alert-health-${animal.id}-${Date.now()}`,
+      animalId: animal.id,
+      animalName: animal.name,
+      type: 'HEALTH_WARNING',
+      message: `HEALTH WARNING: ${animal.name} shows early signs of illness. Temp is +1°C above average and movement is down 40%.`,
+      severity: 'warning',
+      read: false,
+      createdAt: new Date(),
+    });
   }
 }
 
@@ -298,11 +384,30 @@ export function connectMQTT(): void {
  */
 export function disconnectMQTT(): void {
   if (client) {
-    console.log('Disconnecting from TTN MQTT...');
     client.end();
     client = null;
   }
 }
+
+export const sendBuzzerDownlink = (deviceId: string, enabled: boolean) => {
+  if (!client || !client.connected) {
+    console.warn('[MQTT] Cannot send downlink: client not connected');
+    return;
+  }
+
+  const topic = `v3/${MQTT_CONFIG.appId}@ttn/devices/${deviceId}/down/push`;
+  
+  const payload = {
+    downlinks: [{
+      f_port: 2,
+      frm_payload: enabled ? 'AQ==' : 'AA==',
+      priority: 'NORMAL',
+    }]
+  };
+
+  client.publish(topic, JSON.stringify(payload));
+  console.log(`[MQTT] Sent buzzer downlink (${enabled ? 'ON' : 'OFF'}) to ${deviceId}`);
+};
 
 export default {
   MQTT_CONFIG,

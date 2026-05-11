@@ -12,8 +12,8 @@
 
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { useRouter } from 'expo-router';
-import React, { useCallback } from 'react';
-import { StyleSheet, Text, TouchableOpacity, View, ScrollView } from 'react-native';
+import React, { useCallback, useState } from 'react';
+import { Alert, StyleSheet, Text, TouchableOpacity, View, ScrollView, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import AnimalDetailCard from '../../components/AnimalDetailCard';
 import CriticalAlertOverlay from '../../components/CriticalAlertOverlay';
@@ -21,6 +21,7 @@ import GatewayBanner from '../../components/GatewayBanner';
 import Colors from '../../constants/Colors';
 import { useAnimalStore } from '../../store/animalStore';
 import { Animal } from '../../types';
+import { StorageManager } from '../../services/storageManager';
 // Metro automatically picks HerdMapView.native.tsx on device and HerdMapView.web.tsx on browser
 import HerdMapView from '../../components/HerdMapView';
 
@@ -34,6 +35,22 @@ export default function MapScreen() {
   const selectAnimal = useAnimalStore((s) => s.selectAnimal);
   const isLockdownMode = useAnimalStore((s) => s.isLockdownMode);
   const toggleLockdown = useAnimalStore((s) => s.toggleLockdown);
+  const showHeatmap = useAnimalStore((s) => s.showHeatmap);
+  const toggleHeatmap = useAnimalStore((s) => s.toggleHeatmap);
+  const [isSyncing, setIsSyncing] = useState(false);
+  const [syncProgress, setSyncProgress] = useState(0);
+
+  const handleSyncHerd = async () => {
+    setIsSyncing(true);
+    try {
+      await StorageManager.syncHerdArea(animals, (d, t) => {
+        setSyncProgress(Math.round((d / t) * 100));
+      });
+    } finally {
+      setIsSyncing(false);
+      setSyncProgress(0);
+    }
+  };
 
   const handleMarkerPress = useCallback((animal: Animal) => selectAnimal(animal), [selectAnimal]);
   const handleCloseDetail = useCallback(() => selectAnimal(null), [selectAnimal]);
@@ -67,15 +84,33 @@ export default function MapScreen() {
             {isLockdownMode ? 'LOCKDOWN' : 'HERDFINDER'}
           </Text>
         </View>
-        <TouchableOpacity 
-          style={[styles.lockdownBtn, isLockdownMode && styles.lockdownBtnActive]} 
-          onPress={toggleLockdown}
-        >
-          <FontAwesome name={isLockdownMode ? 'lock' : 'unlock'} size={14} color={isLockdownMode ? '#FFF' : Colors.textMuted} />
-          <Text style={[styles.lockdownText, isLockdownMode && { color: '#FFF' }]}>
-            {isLockdownMode ? 'Active' : 'Secure'}
-          </Text>
-        </TouchableOpacity>
+        <View style={styles.headerRight}>
+          <TouchableOpacity 
+            style={[styles.controlBtn, isLockdownMode && styles.lockdownBtnActive]} 
+            onPress={toggleLockdown}
+          >
+            <FontAwesome name="shield" size={16} color={isLockdownMode ? '#FFF' : Colors.textPrimary} />
+          </TouchableOpacity>
+
+          <TouchableOpacity 
+            style={[styles.controlBtn, showHeatmap && { backgroundColor: Colors.warning }]} 
+            onPress={toggleHeatmap}
+          >
+            <FontAwesome name="fire" size={16} color={showHeatmap ? '#FFF' : Colors.textPrimary} />
+          </TouchableOpacity>
+
+          <TouchableOpacity 
+            style={[styles.controlBtn, isSyncing && { backgroundColor: Colors.info }]} 
+            onPress={handleSyncHerd}
+            disabled={isSyncing}
+          >
+            {isSyncing ? (
+              <ActivityIndicator size="small" color="#FFF" />
+            ) : (
+              <FontAwesome name="cloud-download" size={16} color={Colors.textPrimary} />
+            )}
+          </TouchableOpacity>
+        </View>
       </View>
 
       {/* Gateway Banner */}
@@ -88,6 +123,7 @@ export default function MapScreen() {
           safeZone={safeZone}
           selectedAnimal={selectedAnimal}
           onMarkerPress={handleMarkerPress}
+          showHeatmap={showHeatmap}
         />
       </View>
 
@@ -144,16 +180,15 @@ const styles = StyleSheet.create({
   },
   headerCenter: { flexDirection: 'row', alignItems: 'center' },
   headerTitle: { color: Colors.textPrimary, fontSize: 16, fontWeight: '900', letterSpacing: 1 },
-  lockdownBtn: {
-    flexDirection: 'row', alignItems: 'center', backgroundColor: Colors.card,
-    paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20, borderWidth: 1, borderColor: Colors.border,
-    gap: 6,
+  headerRight: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  controlBtn: {
+    width: 36, height: 36, borderRadius: 10, backgroundColor: Colors.card,
+    justifyContent: 'center', alignItems: 'center', borderWidth: 1, borderColor: Colors.border,
   },
   lockdownBtnActive: {
     backgroundColor: Colors.danger, borderColor: Colors.danger,
     shadowColor: Colors.danger, shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.5, shadowRadius: 10, elevation: 8,
   },
-  lockdownText: { color: Colors.textSecondary, fontSize: 10, fontWeight: '800', letterSpacing: 0.5 },
   statusBadge: {
     flexDirection: 'row', alignItems: 'center', backgroundColor: Colors.card,
     paddingHorizontal: 10, paddingVertical: 5, borderRadius: 20, borderWidth: 1, borderColor: Colors.border,

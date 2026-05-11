@@ -184,45 +184,77 @@ export const StorageManager = {
         maxZ: number,
         onProgress?: (downloaded: number, total: number) => void
     ) {
-        const tiles: { z: number; x: number; y: number }[] = [];
-        for (let z = minZ; z <= maxZ; z++) {
-            const xMin = lon2tile(bbox.minLng, z);
-            const xMax = lon2tile(bbox.maxLng, z);
-            const yMin = lat2tile(bbox.maxLat, z);
-            const yMax = lat2tile(bbox.minLat, z);
-
-            for (let x = Math.min(xMin, xMax); x <= Math.max(xMin, xMax); x++) {
-                for (let y = Math.min(yMin, yMax); y <= Math.max(yMin, yMax); y++) {
-                    tiles.push({ z, x, y });
-                }
-            }
-        }
-
+        const tiles = this.getTileList(bbox, minZ, maxZ);
         const total = tiles.length;
         if (total === 0) return;
 
-        const batchSize = 5;
-        for (let i = 0; i < total; i += batchSize) {
-            const batch = tiles.slice(i, i + batchSize);
-            await Promise.all(batch.map(async (tile) => {
-                const dir = `${TILE_CACHE_DIR}${tile.z}/${tile.x}/`;
-                const fileUri = `${dir}${tile.y}.png`;
-                const url = `https://api.mapbox.com/styles/v1/mapbox/satellite-streets-v12/tiles/512/${tile.z}/${tile.x}/${tile.y}?access_token=${process.env.EXPO_PUBLIC_MAPBOX_KEY}`;
+        // Estimate size (avg 20KB per satellite tile)
+        const estSizeMB = (total * 20) / 1024;
+        
+        return new Promise<void>((resolve, reject) => {
+          Alert.alert(
+            'Confirm Download',
+            `This will download ${total} satellite map tiles (approx. ${estSizeMB.toFixed(1)} MB) for offline use. Proceed?`,
+            [
+              { text: 'Cancel', style: 'cancel', onPress: () => resolve() },
+              { 
+                text: 'Download', 
+                onPress: async () => {
+                  const batchSize = 5;
+                  for (let i = 0; i < total; i += batchSize) {
+                    const batch = tiles.slice(i, i + batchSize);
+                    await Promise.all(batch.map(async (tile) => {
+                      const dir = `${TILE_CACHE_DIR}${tile.z}/${tile.x}/`;
+                      const fileUri = `${dir}${tile.y}.png`;
+                      const url = `https://api.mapbox.com/styles/v1/mapbox/satellite-streets-v12/tiles/512/${tile.z}/${tile.x}/${tile.y}?access_token=${process.env.EXPO_PUBLIC_MAPBOX_KEY}`;
 
-                try {
-                    await FileSystem.makeDirectoryAsync(dir, { intermediates: true });
-                    const result = await FileSystem.downloadAsync(url, fileUri);
-                    if (result.status === 200) {
-                        const fileInfo = await FileSystem.getInfoAsync(fileUri);
-                        const size = fileInfo.exists ? fileInfo.size : 0;
-                        await this.trackTile(fileUri, size, tile.z, tile.x, tile.y);
-                    }
-                } catch (err) {
-                    console.error(`Download failed for ${tile.z}/${tile.x}/${tile.y}:`, err);
+                      try {
+                        await FileSystem.makeDirectoryAsync(dir, { intermediates: true });
+                        const result = await FileSystem.downloadAsync(url, fileUri);
+                        if (result.status === 200) {
+                          const fileInfo = await FileSystem.getInfoAsync(fileUri);
+                          const size = fileInfo.exists ? fileInfo.size : 0;
+                          await this.trackTile(fileUri, size, tile.z, tile.x, tile.y);
+                        }
+                      } catch (err) {
+                        console.error(`Download failed for ${tile.z}/${tile.x}/${tile.y}:`, err);
+                      }
+                    }));
+                    onProgress?.(Math.min(i + batchSize, total), total);
+                  }
+                  Alert.alert('Success', 'Offline area is now ready for use!');
+                  resolve();
                 }
-            }));
-            onProgress?.(Math.min(i + batchSize, total), total);
-        }
+              }
+            ]
+          );
+        });
+    },
+
+    /**
+     * Calculates and downloads map tiles for the area covering all animals.
+     */
+    async syncHerdArea(animals: any[], onProgress?: (d: number, t: number) => void) {
+      if (animals.length === 0) return;
+
+      let minLat = 90, maxLat = -90, minLng = 180, maxLng = -180;
+      animals.forEach(a => {
+        if (a.latitude < minLat) minLat = a.latitude;
+        if (a.latitude > maxLat) maxLat = a.latitude;
+        if (a.longitude < minLng) minLng = a.longitude;
+        if (a.longitude > maxLng) maxLng = a.longitude;
+      });
+
+      // Add 1km buffer (approx 0.01 degrees)
+      const bbox = {
+        minLat: minLat - 0.01,
+        maxLat: maxLat + 0.01,
+        minLng: minLng - 0.01,
+        maxLng: maxLng + 0.01
+      };
+
+      // Zoom 12 to 17 covers regional to high-detail satellite
+      await this.downloadRegion(bbox, 14, 17, onProgress);
     },
 
     /**
