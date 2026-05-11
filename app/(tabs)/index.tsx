@@ -88,6 +88,7 @@ export default function MapScreen() {
           animal={selectedAnimal}
           onClose={handleCloseDetail}
           onViewDetail={handleViewDetail}
+          safeZone={safeZone}
         />
       )}
 

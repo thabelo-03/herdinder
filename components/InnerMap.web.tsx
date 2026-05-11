@@ -1,15 +1,16 @@
-import React, { useEffect } from 'react';
-import { View, Text, StyleSheet } from 'react-native';
-import { MapContainer, TileLayer, Polygon, Marker, useMap } from 'react-leaflet';
 import L from 'leaflet';
+import React, { useEffect } from 'react';
+import { MapContainer, Marker, Polygon, TileLayer, useMap } from 'react-leaflet';
+import { StyleSheet, Text, View } from 'react-native';
+import { getCategoryColor, getTempColor } from '../constants/Colors';
 import { Animal, SafeZone } from '../types';
-import { getTempColor, getCategoryColor } from '../constants/Colors';
 
 interface Props {
   animals: Animal[];
   safeZone: SafeZone;
   selectedAnimal: Animal | null;
   onMarkerPress: (animal: Animal) => void;
+  isPreview?: boolean;
 }
 
 function useLeafletCSS() {
@@ -51,12 +52,12 @@ function buildIcon(animal: Animal, isSelected: boolean): L.DivIcon {
   const color = isCattle ? getTempColor(animal.temperature) : getCategoryColor(animal.category);
   const border = isSelected ? '#FFD700' : 'rgba(255,255,255,0.22)';
   const bw = isSelected ? 2 : 1;
-  
+
   const iconChar = isCattle ? '🐾' : animal.category === 'motorbike' ? '🏍️' : '🚙';
   const statusLabel = isCattle ? `${animal.temperature}°C` : (animal.speed && animal.speed > 0 ? `${animal.speed} km/h` : animal.status);
 
-  const breathingHtml = animal.status === 'Moving' 
-    ? `<div class="hf-breathing-dot" style="background-color: ${color}"></div>` 
+  const breathingHtml = animal.status === 'Moving'
+    ? `<div class="hf-breathing-dot" style="background-color: ${color}"></div>`
     : '';
 
   return L.divIcon({
@@ -140,10 +141,12 @@ export default function InnerMap(props: Props) {
       <MapContainer center={[-21.416589, 28.064443]} zoom={13} style={{ width: '100%', height: '100%' }} zoomControl={false}>
         <MapContent {...props} />
       </MapContainer>
-      <View style={styles.badge}>
-        <View style={styles.badgeDot} />
-        <Text style={styles.badgeText}>Safe Zone Active</Text>
-      </View>
+      {!props.isPreview && (
+        <View style={styles.badge}>
+          <View style={styles.badgeDot} />
+          <Text style={styles.badgeText}>Safe Zone Active</Text>
+        </View>
+      )}
     </View>
   );
 }

@@ -1,5 +1,3 @@
-import * as FileSystem from 'expo-file-system/legacy';
-import * as SQLite from 'expo-sqlite';
 import { FontAwesome } from '@expo/vector-icons';
 import React, { useCallback, useRef, useState } from 'react';
 import { Alert, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
@@ -7,7 +5,6 @@ import MapView, { LatLng, Marker, Polygon, Region } from 'react-native-maps';
 import Colors, { getCategoryColor, getCategoryIcon, getTempColor } from '../constants/Colors';
 import { MAX_OFFLINE_TILES, StorageManager, TILE_CACHE_DIR } from '../services/storageManager';
 import { Animal, SafeZone } from '../types';
-import BreathingDot from './BreathingDot';
 import HFMapOfflineOverlay from './OfflineTileOverlay';
 
 interface Props {
@@ -15,6 +12,7 @@ interface Props {
   safeZone: SafeZone;
   selectedAnimal: Animal | null;
   onMarkerPress: (animal: Animal) => void;
+  isPreview?: boolean;
 }
 
 interface HFMapOfflineOverlayProps {
@@ -31,7 +29,13 @@ interface HFMapOfflineOverlayProps {
 const BASE_LAT = -21.416589;
 const BASE_LNG = 28.064443;
 const INITIAL_REGION = { latitude: BASE_LAT, longitude: BASE_LNG, latitudeDelta: 0.06, longitudeDelta: 0.06 };
-export default function HerdMapView({ animals, safeZone, selectedAnimal, onMarkerPress }: Props) {
+export default function HerdMapView({
+  animals,
+  safeZone,
+  selectedAnimal,
+  onMarkerPress,
+  isPreview = false
+}: Props) {
   const mapRef = useRef<MapView>(null);
   const [delta, setDelta] = useState(0.06);
   const [currentRegion, setCurrentRegion] = useState<Region>(INITIAL_REGION);
@@ -279,11 +283,11 @@ export default function HerdMapView({ animals, safeZone, selectedAnimal, onMarke
             : `${animal.temperature}°C`;
 
           return (
-            <Marker 
-              key={animal.id} 
-              coordinate={{ latitude: animal.latitude, longitude: animal.longitude }} 
-              onPress={() => handlePress(animal)} 
-              anchor={{ x: 0.5, y: 1 }} 
+            <Marker
+              key={animal.id}
+              coordinate={{ latitude: animal.latitude, longitude: animal.longitude }}
+              onPress={() => handlePress(animal)}
+              anchor={{ x: 0.5, y: 1 }}
               tracksViewChanges={true}
               zIndex={10}
             >
@@ -299,9 +303,9 @@ export default function HerdMapView({ animals, safeZone, selectedAnimal, onMarke
                     </View>
                     <Text style={styles.markerIdText}>{animal.tagId}</Text>
                   </View>
-                  
+
                   <Text style={styles.markerNameText} numberOfLines={1}>{animal.name}</Text>
-                  
+
                   <View style={styles.markerFooter}>
                     <Text style={[styles.markerTempText, { color: getTempColor(animal.temperature) }]}>
                       {animal.temperature}°C
@@ -309,7 +313,7 @@ export default function HerdMapView({ animals, safeZone, selectedAnimal, onMarke
                     <Text style={styles.markerStatusText}>• {animal.status}</Text>
                   </View>
                 </View>
-                
+
                 {/* Indicator Pin */}
                 <View style={[styles.markerPin, { backgroundColor: pinColor }]} />
                 <View style={styles.markerPointer} />
@@ -320,39 +324,43 @@ export default function HerdMapView({ animals, safeZone, selectedAnimal, onMarke
       </MapView>
 
       {/* Controls */}
-      <View style={styles.controls}>
-        <TouchableOpacity style={styles.controlBtn} onPress={recenter}>
-          <FontAwesome name="crosshairs" size={17} color={Colors.textPrimary} />
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.controlBtn} onPress={() => zoom(0.5)}>
-          <FontAwesome name="plus" size={16} color={Colors.textPrimary} />
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.controlBtn} onPress={() => zoom(2)}>
-          <FontAwesome name="minus" size={16} color={Colors.textPrimary} />
-        </TouchableOpacity>
-        <TouchableOpacity style={[styles.controlBtn, { backgroundColor: Colors.primary }]} onPress={handleDownload} disabled={!!downloadProgress}>
-          <FontAwesome name="download" size={16} color="#FFF" />
-        </TouchableOpacity>
-        {/* New button to toggle download area */}
-        <TouchableOpacity
-          style={[styles.controlBtn, showDownloadArea && { backgroundColor: Colors.info }]}
-          onPress={toggleDownloadArea}
-        >
-          <FontAwesome name="square-o" size={16} color={showDownloadArea ? '#FFF' : Colors.textPrimary} />
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.controlBtn, showCoverage && { backgroundColor: Colors.success }]}
-          onPress={toggleCoverage}
-        >
-          <FontAwesome name="database" size={15} color={showCoverage ? '#FFF' : Colors.textPrimary} />
-        </TouchableOpacity>
-      </View>
+      {!isPreview && (
+        <View style={styles.controls}>
+          <TouchableOpacity style={styles.controlBtn} onPress={recenter}>
+            <FontAwesome name="crosshairs" size={17} color={Colors.textPrimary} />
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.controlBtn} onPress={() => zoom(0.5)}>
+            <FontAwesome name="plus" size={16} color={Colors.textPrimary} />
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.controlBtn} onPress={() => zoom(2)}>
+            <FontAwesome name="minus" size={16} color={Colors.textPrimary} />
+          </TouchableOpacity>
+          <TouchableOpacity style={[styles.controlBtn, { backgroundColor: Colors.primary }]} onPress={handleDownload} disabled={!!downloadProgress}>
+            <FontAwesome name="download" size={16} color="#FFF" />
+          </TouchableOpacity>
+          {/* New button to toggle download area */}
+          <TouchableOpacity
+            style={[styles.controlBtn, showDownloadArea && { backgroundColor: Colors.info }]}
+            onPress={toggleDownloadArea}
+          >
+            <FontAwesome name="square-o" size={16} color={showDownloadArea ? '#FFF' : Colors.textPrimary} />
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.controlBtn, showCoverage && { backgroundColor: Colors.success }]}
+            onPress={toggleCoverage}
+          >
+            <FontAwesome name="database" size={15} color={showCoverage ? '#FFF' : Colors.textPrimary} />
+          </TouchableOpacity>
+        </View>
+      )}
 
       {/* Safe Zone badge */}
-      <View style={styles.badge}>
-        <View style={styles.badgeDot} />
-        <Text style={styles.badgeText}>Safe Zone Active</Text>
-      </View>
+      {!isPreview && (
+        <View style={styles.badge}>
+          <View style={styles.badgeDot} />
+          <Text style={styles.badgeText}>Safe Zone Active</Text>
+        </View>
+      )}
 
       {/* Download Progress Overlay */}
       {downloadProgress && (

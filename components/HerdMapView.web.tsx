@@ -1,5 +1,5 @@
-import React, { useState, useEffect, Suspense } from 'react';
-import { View, StyleSheet, ActivityIndicator } from 'react-native';
+import React, { Suspense, useEffect, useState } from 'react';
+import { ActivityIndicator, StyleSheet, View } from 'react-native';
 import { Animal, SafeZone } from '../types';
 
 interface Props {
@@ -7,6 +7,7 @@ interface Props {
   safeZone: SafeZone;
   selectedAnimal: Animal | null;
   onMarkerPress: (animal: Animal) => void;
+  isPreview?: boolean;
 }
 
 // Dynamically import the Leaflet map so it is NOT executed on the server.

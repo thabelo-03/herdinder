@@ -3,17 +3,19 @@
  * Supports cattle (temperature focus) and vehicles (speed/GPS focus)
  */
 
-import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
-import Colors, { getTempColor, getTempStatus, getCategoryColor, getCategoryIcon, getCategoryLabel } from '../constants/Colors';
-import { Animal } from '../types';
+import React from 'react';
+import { Linking, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import Colors, { getCategoryColor, getCategoryIcon, getCategoryLabel, getTempColor, getTempStatus } from '../constants/Colors';
+import { Animal, SafeZone } from '../types';
+import HerdMapView from './HerdMapView';
 import TempChart from './TempChart';
 
 interface Props {
   animal: Animal;
   onClose: () => void;
   onViewDetail: () => void;
+  safeZone?: SafeZone;
 }
 
 function formatLastSeen(date: Date): string {
@@ -27,7 +29,17 @@ function formatLastSeen(date: Date): string {
   return `${Math.floor(diffHours / 24)} days ago`;
 }
 
-export default function AnimalDetailCard({ animal, onClose, onViewDetail }: Props) {
+export default function AnimalDetailCard({ animal, onClose, onViewDetail, safeZone }: Props) {
+  const openInMaps = () => {
+    const url = `https://www.google.com/maps/search/?api=1&query=${animal.latitude},${animal.longitude}`;
+    Linking.openURL(url);
+  };
+
+  const shareLocationViaWhatsApp = () => {
+    const message = `Check out ${animal.name}'s location: https://www.google.com/maps/search/?api=1&query=${animal.latitude},${animal.longitude}`;
+    Linking.openURL(`whatsapp://send?text=${encodeURIComponent(message)}`);
+  };
+
   const isCattle = animal.category === 'cattle';
   const categoryColor = getCategoryColor(animal.category);
   const categoryIcon = getCategoryIcon(animal.category) as any;
@@ -78,11 +90,26 @@ export default function AnimalDetailCard({ animal, onClose, onViewDetail }: Prop
           </View>
         </TouchableOpacity>
 
+        {/* Small Map Preview */}
+        {safeZone && (
+          <View style={styles.mapPreviewContainer}>
+            <HerdMapView
+              animals={[animal]}
+              safeZone={safeZone}
+              selectedAnimal={animal}
+              onMarkerPress={() => { }} // Non-interactive in preview
+              isPreview={true}
+            />
+            {/* Overlay to catch touches if you want to prevent interaction */}
+            <View style={StyleSheet.absoluteFill} pointerEvents="none" />
+          </View>
+        )}
+
         {/* Info Rows */}
         <View style={styles.infoGrid}>
           <InfoRow label="Status" value={animal.status} valueColor={
             animal.status === 'Moving' ? Colors.success :
-            animal.status === 'Parked' ? categoryColor : Colors.textSecondary
+              animal.status === 'Parked' ? categoryColor : Colors.textSecondary
           } />
           <InfoRow label="Last Seen" value={formatLastSeen(animal.lastSeen)} />
           <InfoRow label="Battery" value={`${animal.battery}%`} valueColor={
@@ -105,6 +132,26 @@ export default function AnimalDetailCard({ animal, onClose, onViewDetail }: Prop
           {!isCattle && animal.tamperDetected && (
             <InfoRow label="⚠ Tamper" value="DETECTED" valueColor={Colors.danger} />
           )}
+          <InfoRow
+            label="Latitude"
+            value={animal.latitude.toFixed(6)}
+            valueColor={Colors.primary}
+            onPress={openInMaps}
+          />
+          <InfoRow
+            label="Longitude"
+            value={animal.longitude.toFixed(6)}
+            valueColor={Colors.primary}
+            onPress={openInMaps}
+          />
+        </View>
+
+        {/* Share Location Button */}
+        <View style={styles.actionRow}>
+          <TouchableOpacity style={styles.shareBtn} onPress={shareLocationViaWhatsApp}>
+            <FontAwesome name="whatsapp" size={18} color={Colors.textOnPrimary} />
+            <Text style={styles.shareBtnText}>Share via WhatsApp</Text>
+          </TouchableOpacity>
         </View>
 
         {/* Temperature Chart (relevant for cattle, shows ambient temp for vehicles) */}
@@ -114,13 +161,23 @@ export default function AnimalDetailCard({ animal, onClose, onViewDetail }: Prop
   );
 }
 
-function InfoRow({ label, value, valueColor }: { label: string; value: string; valueColor?: string }) {
-  return (
+function InfoRow({
+  label,
+  value,
+  valueColor,
+  onPress
+}: { label: string; value: string; valueColor?: string; onPress?: () => void }) {
+  const content = (
     <View style={styles.infoRow}>
       <Text style={styles.infoLabel}>{label}</Text>
       <Text style={[styles.infoValue, valueColor ? { color: valueColor } : null]}>{value}</Text>
     </View>
   );
+
+  if (onPress) {
+    return <TouchableOpacity onPress={onPress} activeOpacity={0.6}>{content}</TouchableOpacity>;
+  }
+  return content;
 }
 
 const styles = StyleSheet.create({
@@ -131,7 +188,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingTop: 8,
     paddingBottom: 20,
-    maxHeight: 440,
+    maxHeight: 550,
     borderTopWidth: 1,
     borderTopColor: Colors.border,
   },
@@ -153,6 +210,14 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10, paddingVertical: 3, borderRadius: 10, marginTop: 4,
   },
   badgeText: { color: '#FFFFFF', fontSize: 10, fontWeight: 'bold', letterSpacing: 0.5 },
+  mapPreviewContainer: {
+    height: 160,
+    borderRadius: 14,
+    overflow: 'hidden',
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: Colors.border,
+  },
   infoGrid: {
     backgroundColor: Colors.backgroundSecondary,
     borderRadius: 12, padding: 12, marginBottom: 12,
@@ -164,3 +229,18 @@ const styles = StyleSheet.create({
   infoLabel: { color: Colors.textSecondary, fontSize: 13 },
   infoValue: { color: Colors.textPrimary, fontSize: 13, fontWeight: '600' },
 });
+
+const actionStyles = StyleSheet.create({
+  actionRow: {
+    marginTop: 12,
+    paddingTop: 12,
+    borderTopWidth: 0.5,
+    borderTopColor: Colors.border,
+  },
+  shareBtn: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+    backgroundColor: '#25D366', borderRadius: 10, paddingVertical: 12, gap: 8,
+  },
+  shareBtnText: { color: Colors.textOnPrimary, fontSize: 15, fontWeight: 'bold' },
+});
+Object.assign(styles, actionStyles);
