@@ -41,6 +41,18 @@ export default function HerdMapView({
   const [currentRegion, setCurrentRegion] = useState<Region>(INITIAL_REGION);
   const [downloadProgress, setDownloadProgress] = useState<{ d: number, t: number } | null>(null);
 
+  // Auto-center map when selectedAnimal changes (e.g. from "Show on Map" button)
+  React.useEffect(() => {
+    if (selectedAnimal && mapRef.current) {
+      mapRef.current.animateToRegion({
+        latitude: selectedAnimal.latitude,
+        longitude: selectedAnimal.longitude,
+        latitudeDelta: delta,
+        longitudeDelta: delta,
+      }, 500);
+    }
+  }, [selectedAnimal]);
+
   // New state for the interactive download rectangle
   const [showDownloadArea, setShowDownloadArea] = useState(false);
   const [downloadRegion, setDownloadRegion] = useState<Region>({

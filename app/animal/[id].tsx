@@ -13,6 +13,8 @@ import {
   TouchableOpacity,
   SafeAreaView,
   Dimensions,
+  Linking,
+  Share,
 } from 'react-native';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -35,6 +37,7 @@ export default function AnimalDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const animals = useAnimalStore((s) => s.animals);
+  const selectAnimal = useAnimalStore((s) => s.selectAnimal);
   const animal = animals.find((a) => a.id === id);
 
   if (!animal) {
@@ -164,10 +167,33 @@ export default function AnimalDetailScreen() {
 
         {/* Quick Actions */}
         <View style={styles.actionsRow}>
-          <ActionButton icon="map-marker" label="Show on Map" color={Colors.primary} onPress={() => router.back()} />
-          {!isCattle && <ActionButton icon="volume-up" label="Sound Alarm" color={Colors.motorbike} onPress={() => {}} />}
-          <ActionButton icon="bell" label="Alert Settings" color={Colors.warning} onPress={() => {}} />
-          {isCattle && <ActionButton icon="share-alt" label="Share" color={Colors.info} onPress={() => {}} />}
+          <ActionButton
+            icon="map-marker"
+            label="Show on Map"
+            color={Colors.primary}
+            onPress={() => {
+              if (animal) {
+                selectAnimal(animal);
+                router.push('/(tabs)');
+              }
+            }}
+          />
+          {!isCattle && <ActionButton icon="volume-up" label="Sound Alarm" color={Colors.motorbike} onPress={() => { }} />}
+          <ActionButton icon="bell" label="Alert Settings" color={Colors.warning} onPress={() => { }} />
+          <ActionButton
+            icon="share-alt"
+            label="Share"
+            color={Colors.info}
+            onPress={() => {
+              if (animal) {
+                const message = `Check out ${animal.name}'s location: https://www.google.com/maps/search/?api=1&query=${animal.latitude},${animal.longitude}`;
+                Share.share({
+                  message,
+                  title: `${animal.name}'s Location`,
+                });
+              }
+            }}
+          />
         </View>
 
         <View style={{ height: 40 }} />
