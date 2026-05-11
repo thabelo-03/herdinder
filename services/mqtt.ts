@@ -25,6 +25,15 @@
 import { useAnimalStore } from '../store/animalStore';
 import { useAlertStore } from '../store/alertStore';
 import { TTNUplink, Alert } from '../types';
+import mqtt, { MqttClient } from 'mqtt';
+import { Buffer } from 'buffer';
+
+// Polyfill Buffer for MQTT library
+if (typeof global.Buffer === 'undefined') {
+  (global as any).Buffer = Buffer;
+}
+
+let client: MqttClient | null = null;
 
 // Configuration - TODO: Move to .env when hardware is connected
 const MQTT_CONFIG = {
@@ -123,33 +132,90 @@ function checkAlertRules(
 }
 
 /**
- * TODO: HARDWARE INTEGRATION - Implement these functions when MQTT library is connected
- * 
- * export function connectMQTT(): void {
- *   const client = mqtt.connect(MQTT_CONFIG.brokerUrl, {
- *     username: `${MQTT_CONFIG.appId}@ttn`,
- *     password: MQTT_CONFIG.apiKey,
- *   });
- *   
- *   client.on('connect', () => {
- *     client.subscribe(MQTT_CONFIG.topic);
- *     console.log('Connected to TTN MQTT');
- *   });
- *   
- *   client.on('message', (topic, message) => {
- *     const payload = JSON.parse(message.toString()) as TTNUplink;
- *     processUplink(payload);
- *   });
- * }
- * 
- * export function disconnectMQTT(): void {
- *   // client.end();
- * }
+ * Connect to the TTN MQTT broker
  */
+export function connectMQTT(): void {
+  if (client) {
+    console.log('MQTT client already exists, skipping connect');
+    return;
+  }
+
+  console.log('Connecting to TTN MQTT broker...', MQTT_CONFIG.brokerUrl);
+
+  try {
+    client = mqtt.connect(MQTT_CONFIG.brokerUrl, {
+      username: `${MQTT_CONFIG.appId}@ttn`,
+      password: MQTT_CONFIG.apiKey,
+      clientId: `herdfinder-mobile-${Math.random().toString(16).slice(2, 10)}`,
+      clean: true,
+      connectTimeout: 5000,
+      reconnectPeriod: 1000,
+    });
+
+    client.on('connect', () => {
+      console.log('Successfully connected to TTN MQTT');
+      client?.subscribe(MQTT_CONFIG.topic, (err) => {
+        if (err) {
+          console.error('MQTT Subscription error:', err);
+        } else {
+          console.log('Subscribed to topic:', MQTT_CONFIG.topic);
+        }
+      });
+      
+      // Update gateway status in store
+      useAnimalStore.getState().setGateway({
+        ...useAnimalStore.getState().gateway,
+        status: 'online',
+        lastSeen: new Date(),
+      });
+    });
+
+    client.on('message', (topic, message) => {
+      try {
+        const payload = JSON.parse(message.toString()) as TTNUplink;
+        processUplink(payload);
+      } catch (e) {
+        console.error('Failed to parse MQTT message:', e);
+      }
+    });
+
+    client.on('error', (err) => {
+      console.error('MQTT Connection error:', err);
+    });
+
+    client.on('offline', () => {
+      console.log('MQTT client went offline');
+      useAnimalStore.getState().setGateway({
+        ...useAnimalStore.getState().gateway,
+        status: 'offline',
+      });
+    });
+
+    client.on('close', () => {
+      console.log('MQTT connection closed');
+    });
+
+  } catch (e) {
+    console.error('Failed to initialize MQTT client:', e);
+  }
+}
+
+/**
+ * Disconnect from the MQTT broker
+ */
+export function disconnectMQTT(): void {
+  if (client) {
+    console.log('Disconnecting from TTN MQTT...');
+    client.end();
+    client = null;
+  }
+}
 
 export default {
   MQTT_CONFIG,
   ALERT_THRESHOLDS,
   decodeEarTagPayload,
   processUplink,
+  connectMQTT,
+  disconnectMQTT,
 };

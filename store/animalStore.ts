@@ -24,10 +24,9 @@ interface AnimalState {
   updateSafeZone: (safeZone: SafeZone) => void;
   loadMockData: () => void;
   
-  // TODO: HARDWARE INTEGRATION
-  // connectMQTT: () => void;
-  // handleUplink: (payload: TTNUplink) => void;
-  // disconnectMQTT: () => void;
+  // HARDWARE INTEGRATION
+  connectMQTT: () => void;
+  disconnectMQTT: () => void;
 }
 
 export const useAnimalStore = create<AnimalState>((set) => ({
@@ -58,4 +57,15 @@ export const useAnimalStore = create<AnimalState>((set) => ({
     gateway: mockGateway,
     safeZone: mockSafeZone,
   }),
+
+  connectMQTT: () => {
+    // We import the service here to avoid circular dependencies if any
+    const { connectMQTT } = require('../services/mqtt');
+    connectMQTT();
+  },
+
+  disconnectMQTT: () => {
+    const { disconnectMQTT } = require('../services/mqtt');
+    disconnectMQTT();
+  },
 }));

@@ -4,6 +4,7 @@ import React, { useEffect, useRef } from 'react';
 import { Animated, StyleSheet, Text, View } from 'react-native';
 import Colors from '../../constants/Colors';
 import { useAlertStore } from '../../store/alertStore';
+import { useAnimalStore } from '../../store/animalStore';
 import { AlertType } from '../../types';
 
 function TabBarIcon(props: {
@@ -62,6 +63,15 @@ function AlertBadge({ types }: { types?: AlertType[] }) {
 }
 
 export default function TabLayout() {
+  const connectMQTT = useAnimalStore((s) => s.connectMQTT);
+  const disconnectMQTT = useAnimalStore((s) => s.disconnectMQTT);
+
+  useEffect(() => {
+    // Start MQTT connection for real-time hardware updates
+    connectMQTT();
+    return () => disconnectMQTT();
+  }, [connectMQTT, disconnectMQTT]);
+
   return (
     <Tabs
       screenOptions={{
