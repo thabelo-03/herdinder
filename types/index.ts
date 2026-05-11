@@ -24,6 +24,7 @@ export interface Animal {
   battery: number;               // percentage 0-100
   status: 'Moving' | 'Stationary' | 'Parked' | 'Offline';
   lastSeen: Date;
+  lastMovedAt?: Date; // Timestamp of the last detected movement
   distanceFromHome: number;      // km
   latitude: number;
   longitude: number;

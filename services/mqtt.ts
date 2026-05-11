@@ -50,6 +50,7 @@ const ALERT_THRESHOLDS = {
   MILD_FEVER: 38.5,    // °C - In-app alert
   LOW_BATTERY: 3.2,    // V (or 20%)
   OFFLINE_HOURS: 12,   // Hours with no reading
+  STATIONARY_HOURS: 2, // Hours with no movement
 };
 
 /**
@@ -79,15 +80,22 @@ export function processUplink(payload: TTNUplink): void {
   const animal = store.animals.find((a) => a.tagId === deviceId);
   
   if (animal) {
+    const isMoving = decoded.motion !== undefined ? decoded.motion : true; // Default to moving if not specified
+    const status = isMoving ? 'Moving' : 'Stationary';
+    const lastMovedAt = isMoving ? new Date() : (animal.lastMovedAt || animal.lastSeen);
+
     store.updateAnimal(animal.id, {
       temperature: decoded.temperature,
       battery: decoded.battery * 10, // Convert voltage to percentage estimate
       lastSeen: new Date(),
-      status: 'Moving', // TODO: Determine from accelerometer data
+      lastMovedAt,
+      status,
+      latitude: decoded.latitude || animal.latitude,
+      longitude: decoded.longitude || animal.longitude,
     });
     
     // Check alert rules
-    checkAlertRules(animal.id, animal.name, decoded.temperature, decoded.battery);
+    checkAlertRules(animal.id, animal.name, decoded.temperature, decoded.battery, status, lastMovedAt);
   }
 }
 
@@ -98,7 +106,9 @@ function checkAlertRules(
   animalId: string,
   animalName: string,
   temperature: number,
-  battery: number
+  battery: number,
+  status: string,
+  lastMovedAt: Date
 ): void {
   const alertStore = useAlertStore.getState();
   
@@ -119,7 +129,7 @@ function checkAlertRules(
   
   if (battery < ALERT_THRESHOLDS.LOW_BATTERY) {
     alertStore.addAlert({
-      id: `alert-${Date.now()}`,
+      id: `alert-bat-${animalId}-${Date.now()}`,
       animalId,
       animalName,
       type: 'LOW_BATTERY',
@@ -128,6 +138,23 @@ function checkAlertRules(
       read: false,
       createdAt: new Date(),
     });
+  }
+
+  // Stationary Alert
+  if (status === 'Stationary') {
+    const hoursStationary = (Date.now() - lastMovedAt.getTime()) / (1000 * 60 * 60);
+    if (hoursStationary >= ALERT_THRESHOLDS.STATIONARY_HOURS) {
+      alertStore.addAlert({
+        id: `alert-move-${animalId}-${Date.now()}`,
+        animalId,
+        animalName,
+        type: 'MOVEMENT_ALERT',
+        message: `${animalName} hasn't moved for over ${ALERT_THRESHOLDS.STATIONARY_HOURS} hours. Check for illness or injury.`,
+        severity: 'critical',
+        read: false,
+        createdAt: new Date(),
+      });
+    }
   }
 }
 
