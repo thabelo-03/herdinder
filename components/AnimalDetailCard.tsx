@@ -6,6 +6,7 @@
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import React, { useRef } from 'react';
 import { Linking, ScrollView, StyleSheet, Text, TouchableOpacity, View, Animated, PanResponder } from 'react-native';
+import * as Haptics from 'expo-haptics';
 import Colors, { getCategoryColor, getCategoryIcon, getCategoryLabel, getTempColor, getTempStatus } from '../constants/Colors';
 import { Animal, SafeZone } from '../types';
 import { useAlertStore } from '../store/alertStore';
@@ -102,7 +103,13 @@ export default function AnimalDetailCard({ animal, onClose, onViewDetail, safeZo
 
       <ScrollView showsVerticalScrollIndicator={false}>
         {/* Header: Name + Temp/Speed */}
-        <TouchableOpacity onPress={onViewDetail} activeOpacity={0.7}>
+        <TouchableOpacity 
+          onPress={() => {
+            Haptics.selectionAsync();
+            onViewDetail();
+          }} 
+          activeOpacity={0.7}
+        >
           <View style={styles.header}>
             <View style={styles.headerLeft}>
               <View style={[styles.categoryBadge, { backgroundColor: `${categoryColor}15`, borderColor: `${categoryColor}40` }]}>
@@ -146,7 +153,10 @@ export default function AnimalDetailCard({ animal, onClose, onViewDetail, safeZo
           <View style={styles.buzzerSection}>
             <TouchableOpacity 
               style={[styles.buzzerBtn, animal.buzzerEnabled && styles.buzzerBtnActive]} 
-              onPress={() => useAnimalStore.getState().triggerBuzzer(animal.id)}
+              onPress={() => {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+                useAnimalStore.getState().triggerBuzzer(animal.id);
+              }}
             >
               <FontAwesome name="bullhorn" size={20} color={animal.buzzerEnabled ? '#FFF' : categoryColor} />
               <Text style={[styles.buzzerBtnText, animal.buzzerEnabled && { color: '#FFF' }]}>

@@ -14,6 +14,7 @@ import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { useRouter } from 'expo-router';
 import React, { useCallback, useState } from 'react';
 import { Alert, StyleSheet, Text, TouchableOpacity, View, ScrollView, ActivityIndicator } from 'react-native';
+import * as Haptics from 'expo-haptics';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import AnimalDetailCard from '../../components/AnimalDetailCard';
 import CriticalAlertOverlay from '../../components/CriticalAlertOverlay';
@@ -37,6 +38,7 @@ export default function MapScreen() {
   const toggleLockdown = useAnimalStore((s) => s.toggleLockdown);
   const showHeatmap = useAnimalStore((s) => s.showHeatmap);
   const toggleHeatmap = useAnimalStore((s) => s.toggleHeatmap);
+  const [filter, setFilter] = useState<string | null>(null);
   const [isSyncing, setIsSyncing] = useState(false);
   const [syncProgress, setSyncProgress] = useState(0);
 
@@ -67,6 +69,20 @@ export default function MapScreen() {
   ).length;
   const onlineCount = animals.filter((a) => a.status !== 'Offline').length;
 
+  const filteredAnimals = filter 
+    ? animals.filter(a => a.category === filter || (filter === 'Alerts' && ((a.category === 'cattle' && a.temperature > 39) || a.tamperDetected || a.status === 'Offline')))
+    : animals;
+
+  const handleToggleLockdown = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+    toggleLockdown();
+  };
+
+  const handleToggleHeatmap = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    toggleHeatmap();
+  };
+
   return (
     <SafeAreaView style={styles.screen} edges={['top']}>
 
@@ -75,7 +91,13 @@ export default function MapScreen() {
 
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity style={styles.headerBtn}>
+        <TouchableOpacity 
+          style={styles.headerBtn}
+          onPress={() => {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+            Alert.alert('Menu', 'Settings and Profile options coming soon!');
+          }}
+        >
           <FontAwesome name="navicon" size={18} color={Colors.textPrimary} />
         </TouchableOpacity>
         <View style={styles.headerCenter}>
@@ -87,21 +109,24 @@ export default function MapScreen() {
         <View style={styles.headerRight}>
           <TouchableOpacity 
             style={[styles.controlBtn, isLockdownMode && styles.lockdownBtnActive]} 
-            onPress={toggleLockdown}
+            onPress={handleToggleLockdown}
           >
             <FontAwesome name="shield" size={16} color={isLockdownMode ? '#FFF' : Colors.textPrimary} />
           </TouchableOpacity>
 
           <TouchableOpacity 
             style={[styles.controlBtn, showHeatmap && { backgroundColor: Colors.warning }]} 
-            onPress={toggleHeatmap}
+            onPress={handleToggleHeatmap}
           >
             <FontAwesome name="fire" size={16} color={showHeatmap ? '#FFF' : Colors.textPrimary} />
           </TouchableOpacity>
 
           <TouchableOpacity 
             style={[styles.controlBtn, isSyncing && { backgroundColor: Colors.info }]} 
-            onPress={handleSyncHerd}
+            onPress={() => {
+              Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+              handleSyncHerd();
+            }}
             disabled={isSyncing}
           >
             {isSyncing ? (
@@ -119,10 +144,13 @@ export default function MapScreen() {
       {/* Map — platform-specific (native or web) */}
       <View style={styles.mapContainer}>
         <HerdMapView
-          animals={animals}
+          animals={filteredAnimals}
           safeZone={safeZone}
           selectedAnimal={selectedAnimal}
-          onMarkerPress={handleMarkerPress}
+          onMarkerPress={(a) => {
+            Haptics.selectionAsync();
+            handleMarkerPress(a);
+          }}
           showHeatmap={showHeatmap}
         />
       </View>
@@ -141,11 +169,22 @@ export default function MapScreen() {
       {!selectedAnimal && (
         <View style={styles.quickStats}>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.quickStatsScroll}>
-            <StatCard icon="paw" label="Cattle" value={cattleCount} color={Colors.cattle} />
-            <StatCard icon="motorcycle" label="Bikes" value={bikeCount} color={Colors.motorbike} />
-            <StatCard icon="car" label="Vehicles" value={vehicleCount} color={Colors.vehicle} />
-            <StatCard icon="exclamation-triangle" label="Alerts" value={alertCount} color={Colors.danger} />
-            <StatCard icon="signal" label="Online" value={onlineCount} color={Colors.success} />
+            <StatCard 
+              icon="paw" label="Cattle" value={cattleCount} color={Colors.cattle} 
+              isActive={filter === 'cattle'} onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); setFilter(filter === 'cattle' ? null : 'cattle'); }} 
+            />
+            <StatCard 
+              icon="motorcycle" label="Bikes" value={bikeCount} color={Colors.motorbike} 
+              isActive={filter === 'motorbike'} onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); setFilter(filter === 'motorbike' ? null : 'motorbike'); }} 
+            />
+            <StatCard 
+              icon="car" label="Vehicles" value={vehicleCount} color={Colors.vehicle} 
+              isActive={filter === 'vehicle'} onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); setFilter(filter === 'vehicle' ? null : 'vehicle'); }} 
+            />
+            <StatCard 
+              icon="exclamation-triangle" label="Alerts" value={alertCount} color={Colors.danger} 
+              isActive={filter === 'Alerts'} onPress={() => { Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning); setFilter(filter === 'Alerts' ? null : 'Alerts'); }} 
+            />
           </ScrollView>
         </View>
       )}
@@ -153,17 +192,23 @@ export default function MapScreen() {
   );
 }
 
-function StatCard({ icon, label, value, color }: { icon: string; label: string; value: number; color: string }) {
+function StatCard({ icon, label, value, color, isActive, onPress }: { 
+  icon: string; label: string; value: number; color: string; isActive?: boolean; onPress: () => void 
+}) {
   return (
-    <View style={styles.statCard}>
-      <View style={[styles.statIcon, { backgroundColor: `${color}15` }]}>
-        <FontAwesome name={icon as any} size={12} color={color} />
+    <TouchableOpacity 
+      style={[styles.statCard, isActive && { borderColor: color, backgroundColor: `${color}05`, borderWidth: 2 }]}
+      onPress={onPress}
+      activeOpacity={0.7}
+    >
+      <View style={[styles.statIcon, { backgroundColor: isActive ? color : `${color}15` }]}>
+        <FontAwesome name={icon as any} size={12} color={isActive ? '#FFF' : color} />
       </View>
       <View>
         <Text style={styles.statValue}>{value}</Text>
         <Text style={styles.statLabel}>{label}</Text>
       </View>
-    </View>
+    </TouchableOpacity>
   );
 }
 

@@ -7,6 +7,7 @@ import React from 'react';
 import {
   View, Text, StyleSheet, FlatList, TouchableOpacity, SafeAreaView,
 } from 'react-native';
+import * as Haptics from 'expo-haptics';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import Colors from '../../constants/Colors';
 import { useAlertStore } from '../../store/alertStore';
@@ -18,9 +19,8 @@ const FILTER_OPTIONS: { label: string; value: AlertType | 'ALL' }[] = [
   { label: 'Temperature', value: 'HIGH_TEMPERATURE' },
   { label: 'Safe Zone', value: 'LEFT_SAFE_ZONE' },
   { label: 'Theft', value: 'THEFT_ALERT' },
-  { label: 'Speeding', value: 'SPEEDING' },
-  { label: 'Tamper', value: 'TAG_TAMPER' },
-  { label: 'Movement', value: 'MOVEMENT_ALERT' },
+  { label: 'Isolation', value: 'ISOLATION_ALERT' },
+  { label: 'Health', value: 'HEALTH_WARNING' },
   { label: 'Battery', value: 'LOW_BATTERY' },
 ];
 
@@ -51,7 +51,13 @@ export default function AlertsScreen() {
           </Text>
         </View>
         {unreadCount > 0 && (
-          <TouchableOpacity onPress={markAllAsRead} style={styles.markAllBtn}>
+          <TouchableOpacity 
+            onPress={() => {
+              Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+              markAllAsRead();
+            }} 
+            style={styles.markAllBtn}
+          >
             <Text style={styles.markAllText}>Mark all read</Text>
           </TouchableOpacity>
         )}
@@ -79,7 +85,10 @@ export default function AlertsScreen() {
           <TouchableOpacity
             key={opt.value}
             style={[styles.filterPill, filter === opt.value && styles.filterPillActive]}
-            onPress={() => setFilter(opt.value)}
+            onPress={() => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              setFilter(opt.value);
+            }}
           >
             <Text style={[styles.filterText, filter === opt.value && styles.filterTextActive]}>
               {opt.label}

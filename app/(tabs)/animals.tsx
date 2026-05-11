@@ -14,6 +14,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import * as Haptics from 'expo-haptics';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import BreathingDot from '../../components/BreathingDot';
 import Colors, { getCategoryColor, getCategoryIcon, getTempColor } from '../../constants/Colors';
@@ -47,6 +48,18 @@ export default function AnimalsScreen() {
   const [search, setSearch] = useState('');
   const [filterCategory, setFilterCategory] = useState<FilterCategory>('all');
   const [filterGroup, setFilterGroup] = useState<string | null>(null);
+  const [sortBy, setSortBy] = useState<'recent' | 'name' | 'battery'>('recent');
+
+  const handlePressAnimal = (id: string) => {
+    Haptics.selectionAsync();
+    router.push(`/animal/${id}`);
+  };
+
+  const handleToggleCategory = (cat: FilterCategory) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setFilterCategory(cat);
+    setFilterGroup(null);
+  };
 
   const filteredByCategory = filterCategory === 'all'
     ? animals
@@ -59,6 +72,10 @@ export default function AnimalsScreen() {
       (a.plateNumber?.toLowerCase().includes(search.toLowerCase()));
     const matchGroup = !filterGroup || a.herdName === filterGroup;
     return matchSearch && matchGroup;
+  }).sort((a, b) => {
+    if (sortBy === 'name') return a.name.localeCompare(b.name);
+    if (sortBy === 'battery') return a.battery - b.battery;
+    return b.lastSeen.getTime() - a.lastSeen.getTime();
   });
 
   const renderAnimal = ({ item }: { item: Animal }) => {
@@ -69,7 +86,7 @@ export default function AnimalsScreen() {
     return (
       <TouchableOpacity
         style={styles.animalRow}
-        onPress={() => router.push(`/animal/${item.id}`)}
+        onPress={() => handlePressAnimal(item.id)}
         activeOpacity={0.7}
       >
         {/* Icon & Category Indicator */}
@@ -129,8 +146,14 @@ export default function AnimalsScreen() {
           <Text style={styles.headerTitle}>Assets</Text>
           <Text style={styles.headerCount}>{onlineCount} online · {animals.length} total</Text>
         </View>
-        <TouchableOpacity style={styles.headerAction}>
-          <FontAwesome name="sliders" size={18} color={Colors.primary} />
+        <TouchableOpacity 
+          style={styles.headerAction}
+          onPress={() => {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+            setSortBy(sortBy === 'recent' ? 'battery' : sortBy === 'battery' ? 'name' : 'recent');
+          }}
+        >
+          <FontAwesome name={sortBy === 'recent' ? 'clock-o' : sortBy === 'battery' ? 'bolt' : 'sort-alpha-asc'} size={18} color={Colors.primary} />
         </TouchableOpacity>
       </View>
 
@@ -145,7 +168,7 @@ export default function AnimalsScreen() {
             <TouchableOpacity
               key={cat.value}
               style={[styles.categoryTab, isActive && { backgroundColor: cat.color, borderColor: cat.color }]}
-              onPress={() => { setFilterCategory(cat.value); setFilterGroup(null); }}
+              onPress={() => handleToggleCategory(cat.value)}
             >
               <FontAwesome name={cat.icon as any} size={12} color={isActive ? Colors.textOnPrimary : cat.color} />
               <Text style={[styles.categoryTabText, isActive && { color: Colors.textOnPrimary }]}>
@@ -212,7 +235,14 @@ export default function AnimalsScreen() {
       />
 
       {/* FAB to add new asset */}
-      <TouchableOpacity style={styles.fab} activeOpacity={0.8}>
+      <TouchableOpacity 
+        style={styles.fab} 
+        activeOpacity={0.8}
+        onPress={() => {
+          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+          Alert.alert('Add Asset', 'Hardware registration and QR scanning coming soon!');
+        }}
+      >
         <FontAwesome name="plus" size={22} color={Colors.textOnPrimary} />
       </TouchableOpacity>
     </SafeAreaView>

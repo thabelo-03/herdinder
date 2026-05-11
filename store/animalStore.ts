@@ -34,7 +34,7 @@ interface AnimalState {
   disconnectMQTT: () => void;
 }
 
-export const useAnimalStore = create<AnimalState>((set) => ({
+export const useAnimalStore = create<AnimalState>((set, get) => ({
   animals: mockAnimals,
   selectedAnimal: null,
   gateway: mockGateway,

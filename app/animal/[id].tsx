@@ -15,7 +15,9 @@ import {
   Dimensions,
   Linking,
   Share,
+  Alert,
 } from 'react-native';
+import * as Haptics from 'expo-haptics';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import Colors, { getTempColor, getTempStatus, getCategoryColor, getCategoryIcon, getCategoryLabel } from '../../constants/Colors';
@@ -68,7 +70,13 @@ export default function AnimalDetailScreen() {
           <FontAwesome name="arrow-left" size={18} color={Colors.textPrimary} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>{animal.name}</Text>
-        <TouchableOpacity style={styles.headerBtn}>
+        <TouchableOpacity 
+          style={styles.headerBtn}
+          onPress={() => {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+            Alert.alert('Edit Asset', 'Name and Herd editing coming soon!');
+          }}
+        >
           <FontAwesome name="pencil" size={18} color={Colors.primary} />
         </TouchableOpacity>
       </View>
@@ -183,13 +191,32 @@ export default function AnimalDetailScreen() {
             color={Colors.primary}
             onPress={() => {
               if (animal) {
+                Haptics.selectionAsync();
                 selectAnimal(animal);
                 router.push('/(tabs)');
               }
             }}
           />
-          {!isCattle && <ActionButton icon="volume-up" label="Sound Alarm" color={Colors.motorbike} onPress={() => { }} />}
-          <ActionButton icon="bell" label="Alert Settings" color={Colors.warning} onPress={() => { }} />
+          {!isCattle && (
+            <ActionButton 
+              icon="volume-up" 
+              label={animal.buzzerEnabled ? "Stop Alarm" : "Sound Alarm"} 
+              color={Colors.motorbike} 
+              onPress={() => {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+                useAnimalStore.getState().triggerBuzzer(animal.id);
+              }} 
+            />
+          )}
+          <ActionButton 
+            icon="bell" 
+            label="Settings" 
+            color={Colors.warning} 
+            onPress={() => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              Alert.alert('Settings', 'Notification thresholds coming soon!');
+            }} 
+          />
           <ActionButton
             icon="share-alt"
             label="Share"
