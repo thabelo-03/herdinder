@@ -32,6 +32,8 @@ export default function MapScreen() {
   const safeZone = useAnimalStore((s) => s.safeZone);
   const selectedAnimal = useAnimalStore((s) => s.selectedAnimal);
   const selectAnimal = useAnimalStore((s) => s.selectAnimal);
+  const isLockdownMode = useAnimalStore((s) => s.isLockdownMode);
+  const toggleLockdown = useAnimalStore((s) => s.toggleLockdown);
 
   const handleMarkerPress = useCallback((animal: Animal) => selectAnimal(animal), [selectAnimal]);
   const handleCloseDetail = useCallback(() => selectAnimal(null), [selectAnimal]);
@@ -60,13 +62,20 @@ export default function MapScreen() {
           <FontAwesome name="navicon" size={18} color={Colors.textPrimary} />
         </TouchableOpacity>
         <View style={styles.headerCenter}>
-          <FontAwesome name="shield" size={18} color={Colors.primary} />
-          <Text style={styles.headerTitle}> HERDFINDER</Text>
+          <FontAwesome name="shield" size={18} color={isLockdownMode ? Colors.danger : Colors.primary} />
+          <Text style={[styles.headerTitle, isLockdownMode && { color: Colors.danger }]}>
+            {isLockdownMode ? 'LOCKDOWN' : 'HERDFINDER'}
+          </Text>
         </View>
-        <View style={styles.statusBadge}>
-          <View style={[styles.statusDot, { backgroundColor: gateway.status === 'online' ? Colors.success : Colors.danger }]} />
-          <Text style={styles.statusText}>{gateway.status === 'online' ? 'LIVE' : 'OFFLINE'}</Text>
-        </View>
+        <TouchableOpacity 
+          style={[styles.lockdownBtn, isLockdownMode && styles.lockdownBtnActive]} 
+          onPress={toggleLockdown}
+        >
+          <FontAwesome name={isLockdownMode ? 'lock' : 'unlock'} size={14} color={isLockdownMode ? '#FFF' : Colors.textMuted} />
+          <Text style={[styles.lockdownText, isLockdownMode && { color: '#FFF' }]}>
+            {isLockdownMode ? 'Active' : 'Secure'}
+          </Text>
+        </TouchableOpacity>
       </View>
 
       {/* Gateway Banner */}
@@ -134,7 +143,17 @@ const styles = StyleSheet.create({
     justifyContent: 'center', alignItems: 'center', borderWidth: 1, borderColor: Colors.border,
   },
   headerCenter: { flexDirection: 'row', alignItems: 'center' },
-  headerTitle: { color: Colors.textPrimary, fontSize: 18, fontWeight: '900', letterSpacing: 1 },
+  headerTitle: { color: Colors.textPrimary, fontSize: 16, fontWeight: '900', letterSpacing: 1 },
+  lockdownBtn: {
+    flexDirection: 'row', alignItems: 'center', backgroundColor: Colors.card,
+    paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20, borderWidth: 1, borderColor: Colors.border,
+    gap: 6,
+  },
+  lockdownBtnActive: {
+    backgroundColor: Colors.danger, borderColor: Colors.danger,
+    shadowColor: Colors.danger, shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.5, shadowRadius: 10, elevation: 8,
+  },
+  lockdownText: { color: Colors.textSecondary, fontSize: 10, fontWeight: '800', letterSpacing: 0.5 },
   statusBadge: {
     flexDirection: 'row', alignItems: 'center', backgroundColor: Colors.card,
     paddingHorizontal: 10, paddingVertical: 5, borderRadius: 20, borderWidth: 1, borderColor: Colors.border,

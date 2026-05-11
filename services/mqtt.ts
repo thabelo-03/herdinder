@@ -207,6 +207,21 @@ function checkAlertRules(
        });
     }
   }
+
+  // Lockdown Mode Breach
+  const isLockdownMode = useAnimalStore.getState().isLockdownMode;
+  if (isLockdownMode && status === 'Moving') {
+    alertStore.addAlert({
+      id: `alert-lockdown-${animalId}-${Date.now()}`,
+      animalId,
+      animalName,
+      type: 'THEFT_ALERT',
+      message: `LOCKDOWN BREACH: ${animalName} is moving while Kraal Lockdown is ACTIVE!`,
+      severity: 'critical',
+      read: false,
+      createdAt: new Date(),
+    });
+  }
 }
 
 /**

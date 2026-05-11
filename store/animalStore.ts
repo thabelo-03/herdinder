@@ -14,6 +14,7 @@ interface AnimalState {
   gateway: Gateway;
   safeZone: SafeZone;
   isLoading: boolean;
+  isLockdownMode: boolean;
   
   // Actions
   setAnimals: (animals: Animal[]) => void;
@@ -23,6 +24,7 @@ interface AnimalState {
   setGateway: (gateway: Gateway) => void;
   updateSafeZone: (safeZone: SafeZone) => void;
   loadMockData: () => void;
+  toggleLockdown: () => void;
   
   // HARDWARE INTEGRATION
   connectMQTT: () => void;
@@ -35,6 +37,7 @@ export const useAnimalStore = create<AnimalState>((set) => ({
   gateway: mockGateway,
   safeZone: mockSafeZone,
   isLoading: false,
+  isLockdownMode: false,
   
   setAnimals: (animals) => set({ animals }),
   
@@ -51,6 +54,8 @@ export const useAnimalStore = create<AnimalState>((set) => ({
   setGateway: (gateway) => set({ gateway }),
   
   updateSafeZone: (safeZone) => set({ safeZone }),
+
+  toggleLockdown: () => set((state) => ({ isLockdownMode: !state.isLockdownMode })),
   
   loadMockData: () => set({
     animals: mockAnimals,
