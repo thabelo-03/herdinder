@@ -43,6 +43,7 @@ const CATEGORY_FILTERS: { label: string; value: FilterCategory; icon: string; co
 export default function AnimalsScreen() {
   const router = useRouter();
   const animals = useAnimalStore((s) => s.animals);
+  const onlineCount = animals.filter((a) => a.status !== 'Offline').length;
   const [search, setSearch] = useState('');
   const [filterCategory, setFilterCategory] = useState<FilterCategory>('all');
   const [filterGroup, setFilterGroup] = useState<string | null>(null);
@@ -71,31 +72,35 @@ export default function AnimalsScreen() {
         onPress={() => router.push(`/animal/${item.id}`)}
         activeOpacity={0.7}
       >
-        {/* Icon */}
-        <View style={[styles.animalIcon, { borderColor: categoryColor }]}>
-          <FontAwesome name={categoryIcon} size={16} color={categoryColor} />
+        {/* Icon & Category Indicator */}
+        <View style={[styles.animalIcon, { backgroundColor: `${categoryColor}15`, borderColor: `${categoryColor}40` }]}>
+          <FontAwesome name={categoryIcon} size={18} color={categoryColor} />
         </View>
+        <View style={[styles.categoryLine, { backgroundColor: categoryColor }]} />
 
         {/* Info */}
         <View style={styles.animalInfo}>
-          <Text style={styles.animalName}>{item.name}</Text>
-          <Text style={styles.animalSub}>
+          <View style={styles.nameRow}>
+            <Text style={styles.animalName} numberOfLines={1}>{item.name}</Text>
+            {item.battery < 20 && (
+              <FontAwesome name="battery-1" size={10} color={Colors.danger} style={{ marginLeft: 6 }} />
+            )}
+          </View>
+          <Text style={styles.animalSub} numberOfLines={1}>
             {item.herdName} · {formatLastSeen(item.lastSeen)}
-            {item.plateNumber ? ` · ${item.plateNumber}` : ''}
           </Text>
         </View>
 
-        {/* Status */}
-        <View style={styles.statusBadge}>
-          {item.status === 'Moving' ? (
-            <BreathingDot color={Colors.success} size={6} style={{ marginRight: 4 }} />
-          ) : (
-            <View style={[styles.statusDot, {
-              backgroundColor: item.status === 'Offline' ? Colors.danger :
-                item.status === 'Parked' ? categoryColor : Colors.textSecondary
-            }]} />
-          )}
-          <Text style={styles.statusText}>{item.status}</Text>
+        {/* Metrics (Battery/Signal) */}
+        <View style={styles.metricsColumn}>
+          <View style={styles.metricItem}>
+            <FontAwesome name="signal" size={8} color={Colors.textMuted} />
+            <Text style={styles.metricText}>Excellent</Text>
+          </View>
+          <View style={styles.metricItem}>
+            <FontAwesome name="bolt" size={8} color={item.battery < 20 ? Colors.danger : Colors.success} />
+            <Text style={[styles.metricText, item.battery < 20 && { color: Colors.danger }]}>{item.battery}%</Text>
+          </View>
         </View>
 
         {/* Value — temp for cattle, speed for vehicles */}
@@ -111,7 +116,7 @@ export default function AnimalsScreen() {
           )}
         </View>
 
-        <FontAwesome name="chevron-right" size={12} color={Colors.textMuted} />
+        <FontAwesome name="chevron-right" size={10} color={Colors.textMuted} />
       </TouchableOpacity>
     );
   };
@@ -120,8 +125,13 @@ export default function AnimalsScreen() {
     <SafeAreaView style={styles.screen} edges={['top']}>
       {/* Header */}
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>Assets</Text>
-        <Text style={styles.headerCount}>{animals.length} tracked</Text>
+        <View>
+          <Text style={styles.headerTitle}>Assets</Text>
+          <Text style={styles.headerCount}>{onlineCount} online · {animals.length} total</Text>
+        </View>
+        <TouchableOpacity style={styles.headerAction}>
+          <FontAwesome name="sliders" size={18} color={Colors.primary} />
+        </TouchableOpacity>
       </View>
 
       {/* Category Filter Tabs */}
@@ -245,20 +255,29 @@ const styles = StyleSheet.create({
   list: { paddingHorizontal: 20, paddingBottom: 100 },
   animalRow: {
     flexDirection: 'row', alignItems: 'center', backgroundColor: Colors.card,
-    borderRadius: 14, padding: 14, marginBottom: 10, borderWidth: 1, borderColor: Colors.border,
+    borderRadius: 16, padding: 12, marginBottom: 12, borderWidth: 1, borderColor: Colors.border,
+    shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 4, elevation: 2,
   },
   animalIcon: {
-    width: 42, height: 42, borderRadius: 21, justifyContent: 'center', alignItems: 'center',
-    backgroundColor: 'rgba(255,215,0,0.08)', borderWidth: 2, marginRight: 12,
+    width: 44, height: 44, borderRadius: 12, justifyContent: 'center', alignItems: 'center',
+    borderWidth: 1.5,
   },
-  animalInfo: { flex: 1 },
-  animalName: { color: Colors.textPrimary, fontSize: 15, fontWeight: '700' },
-  animalSub: { color: Colors.textSecondary, fontSize: 11, marginTop: 2 },
-  statusBadge: { flexDirection: 'row', alignItems: 'center', marginRight: 10 },
-  statusDot: { width: 6, height: 6, borderRadius: 3, marginRight: 4 },
-  statusText: { color: Colors.textSecondary, fontSize: 10 },
-  tempBlock: { marginRight: 8 },
-  tempValue: { fontSize: 14, fontWeight: 'bold' },
+  categoryLine: {
+    width: 3, height: 24, borderRadius: 1.5, marginLeft: 12, marginRight: 0,
+  },
+  animalInfo: { flex: 1, marginLeft: 12 },
+  nameRow: { flexDirection: 'row', alignItems: 'center' },
+  animalName: { color: Colors.textPrimary, fontSize: 16, fontWeight: '700' },
+  animalSub: { color: Colors.textSecondary, fontSize: 11, marginTop: 1 },
+  metricsColumn: { alignItems: 'flex-end', marginRight: 16, gap: 4 },
+  metricItem: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  metricText: { color: Colors.textSecondary, fontSize: 9, fontWeight: '600' },
+  tempBlock: { marginRight: 10, alignItems: 'flex-end' },
+  tempValue: { fontSize: 15, fontWeight: 'bold' },
+  headerAction: {
+    width: 40, height: 40, borderRadius: 20, backgroundColor: Colors.card,
+    justifyContent: 'center', alignItems: 'center', borderWidth: 1, borderColor: Colors.border,
+  },
   fab: {
     position: 'absolute', bottom: 24, right: 24, width: 56, height: 56, borderRadius: 28,
     backgroundColor: Colors.primary, justifyContent: 'center', alignItems: 'center',

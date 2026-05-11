@@ -13,7 +13,7 @@
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { useRouter } from 'expo-router';
 import React, { useCallback } from 'react';
-import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { StyleSheet, Text, TouchableOpacity, View, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import AnimalDetailCard from '../../components/AnimalDetailCard';
 import CriticalAlertOverlay from '../../components/CriticalAlertOverlay';
@@ -56,16 +56,16 @@ export default function MapScreen() {
 
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity style={styles.menuBtn}>
-          <FontAwesome name="bars" size={20} color={Colors.textPrimary} />
+        <TouchableOpacity style={styles.headerBtn}>
+          <FontAwesome name="navicon" size={18} color={Colors.textPrimary} />
         </TouchableOpacity>
         <View style={styles.headerCenter}>
-          <FontAwesome name="shield" size={16} color={Colors.primary} />
-          <Text style={styles.headerTitle}> HerdFinder</Text>
+          <FontAwesome name="shield" size={18} color={Colors.primary} />
+          <Text style={styles.headerTitle}> HERDFINDER</Text>
         </View>
-        <View style={styles.onlineIndicator}>
-          <View style={[styles.onlineDot, { backgroundColor: gateway.status === 'online' ? Colors.success : Colors.danger }]} />
-          <Text style={styles.onlineText}>{gateway.status === 'online' ? 'Online' : 'Offline'}</Text>
+        <View style={styles.statusBadge}>
+          <View style={[styles.statusDot, { backgroundColor: gateway.status === 'online' ? Colors.success : Colors.danger }]} />
+          <Text style={styles.statusText}>{gateway.status === 'online' ? 'LIVE' : 'OFFLINE'}</Text>
         </View>
       </View>
 
@@ -95,40 +95,30 @@ export default function MapScreen() {
       {/* Quick Stats Bar — shows asset counts by category */}
       {!selectedAnimal && (
         <View style={styles.quickStats}>
-          <View style={styles.quickStatsRow}>
-            <View style={styles.statItem}>
-              <FontAwesome name="paw" size={14} color={Colors.cattle} />
-              <Text style={styles.statValue}>{cattleCount}</Text>
-              <Text style={styles.statLabel}>Cattle</Text>
-            </View>
-            <View style={styles.statDivider} />
-            <View style={styles.statItem}>
-              <FontAwesome name="motorcycle" size={14} color={Colors.motorbike} />
-              <Text style={styles.statValue}>{bikeCount}</Text>
-              <Text style={styles.statLabel}>Bikes</Text>
-            </View>
-            <View style={styles.statDivider} />
-            <View style={styles.statItem}>
-              <FontAwesome name="car" size={14} color={Colors.vehicle} />
-              <Text style={styles.statValue}>{vehicleCount}</Text>
-              <Text style={styles.statLabel}>Vehicles</Text>
-            </View>
-            <View style={styles.statDivider} />
-            <View style={styles.statItem}>
-              <FontAwesome name="exclamation-triangle" size={14} color={Colors.danger} />
-              <Text style={styles.statValue}>{alertCount}</Text>
-              <Text style={styles.statLabel}>Alerts</Text>
-            </View>
-            <View style={styles.statDivider} />
-            <View style={styles.statItem}>
-              <FontAwesome name="signal" size={14} color={Colors.success} />
-              <Text style={styles.statValue}>{onlineCount}</Text>
-              <Text style={styles.statLabel}>Online</Text>
-            </View>
-          </View>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.quickStatsScroll}>
+            <StatCard icon="paw" label="Cattle" value={cattleCount} color={Colors.cattle} />
+            <StatCard icon="motorcycle" label="Bikes" value={bikeCount} color={Colors.motorbike} />
+            <StatCard icon="car" label="Vehicles" value={vehicleCount} color={Colors.vehicle} />
+            <StatCard icon="exclamation-triangle" label="Alerts" value={alertCount} color={Colors.danger} />
+            <StatCard icon="signal" label="Online" value={onlineCount} color={Colors.success} />
+          </ScrollView>
         </View>
       )}
     </SafeAreaView>
+  );
+}
+
+function StatCard({ icon, label, value, color }: { icon: string; label: string; value: number; color: string }) {
+  return (
+    <View style={styles.statCard}>
+      <View style={[styles.statIcon, { backgroundColor: `${color}15` }]}>
+        <FontAwesome name={icon as any} size={12} color={color} />
+      </View>
+      <View>
+        <Text style={styles.statValue}>{value}</Text>
+        <Text style={styles.statLabel}>{label}</Text>
+      </View>
+    </View>
   );
 }
 
@@ -136,22 +126,35 @@ const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: Colors.background },
   header: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    paddingHorizontal: 16, paddingVertical: 10, backgroundColor: Colors.background,
+    paddingHorizontal: 16, paddingVertical: 12, backgroundColor: Colors.background,
+    borderBottomWidth: 1, borderBottomColor: Colors.border,
   },
-  menuBtn: { padding: 6 },
+  headerBtn: {
+    width: 36, height: 36, borderRadius: 10, backgroundColor: Colors.card,
+    justifyContent: 'center', alignItems: 'center', borderWidth: 1, borderColor: Colors.border,
+  },
   headerCenter: { flexDirection: 'row', alignItems: 'center' },
-  headerTitle: { color: Colors.primary, fontSize: 20, fontWeight: 'bold' },
-  onlineIndicator: { flexDirection: 'row', alignItems: 'center' },
-  onlineDot: { width: 8, height: 8, borderRadius: 4, marginRight: 5 },
-  onlineText: { color: Colors.textSecondary, fontSize: 12 },
+  headerTitle: { color: Colors.textPrimary, fontSize: 18, fontWeight: '900', letterSpacing: 1 },
+  statusBadge: {
+    flexDirection: 'row', alignItems: 'center', backgroundColor: Colors.card,
+    paddingHorizontal: 10, paddingVertical: 5, borderRadius: 20, borderWidth: 1, borderColor: Colors.border,
+  },
+  statusDot: { width: 6, height: 6, borderRadius: 3, marginRight: 6 },
+  statusText: { color: Colors.textSecondary, fontSize: 10, fontWeight: 'bold' },
   mapContainer: { flex: 1 },
   quickStats: {
-    backgroundColor: Colors.card, borderTopWidth: 1,
-    borderTopColor: Colors.border, paddingVertical: 12, paddingHorizontal: 12,
+    backgroundColor: Colors.background, paddingVertical: 12,
   },
-  quickStatsRow: { flexDirection: 'row', justifyContent: 'space-around', alignItems: 'center' },
-  statItem: { alignItems: 'center', gap: 3 },
+  quickStatsScroll: { paddingHorizontal: 16, gap: 10 },
+  statCard: {
+    flexDirection: 'row', alignItems: 'center', backgroundColor: Colors.card,
+    paddingHorizontal: 14, paddingVertical: 10, borderRadius: 14,
+    borderWidth: 1, borderColor: Colors.border, gap: 10,
+    minWidth: 100,
+  },
+  statIcon: {
+    width: 28, height: 28, borderRadius: 8, justifyContent: 'center', alignItems: 'center',
+  },
   statValue: { color: Colors.textPrimary, fontSize: 16, fontWeight: 'bold' },
   statLabel: { color: Colors.textSecondary, fontSize: 9, fontWeight: '600' },
-  statDivider: { width: 1, height: 28, backgroundColor: Colors.border },
 });

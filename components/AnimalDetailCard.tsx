@@ -103,12 +103,13 @@ export default function AnimalDetailCard({ animal, onClose, onViewDetail, safeZo
         <TouchableOpacity onPress={onViewDetail} activeOpacity={0.7}>
           <View style={styles.header}>
             <View style={styles.headerLeft}>
-              <FontAwesome name={categoryIcon} size={20} color={categoryColor} />
+              <View style={[styles.categoryBadge, { backgroundColor: `${categoryColor}15`, borderColor: `${categoryColor}40` }]}>
+                <FontAwesome name={categoryIcon} size={18} color={categoryColor} />
+              </View>
               <View style={styles.nameBlock}>
                 <Text style={styles.name}>{animal.name}</Text>
                 <Text style={styles.subtitle}>
                   {animal.location} · {animal.herdName}
-                  {animal.plateNumber ? ` · ${animal.plateNumber}` : ''}
                 </Text>
               </View>
             </View>
@@ -116,10 +117,10 @@ export default function AnimalDetailCard({ animal, onClose, onViewDetail, safeZo
               {isCattle ? (
                 <>
                   <Text style={[styles.tempValue, { color: getTempColor(animal.temperature) }]}>
-                    {animal.temperature}°C
+                    {animal.temperature.toFixed(1)}°C
                   </Text>
-                  <View style={[styles.badge, { backgroundColor: tempStatus.color }]}>
-                    <Text style={styles.badgeText}>{tempStatus.label}</Text>
+                  <View style={[styles.statusBadge, { backgroundColor: tempStatus.color }]}>
+                    <Text style={styles.statusBadgeText}>{tempStatus.label.toUpperCase()}</Text>
                   </View>
                 </>
               ) : (
@@ -127,8 +128,8 @@ export default function AnimalDetailCard({ animal, onClose, onViewDetail, safeZo
                   <Text style={[styles.tempValue, { color: categoryColor }]}>
                     {animal.speed != null && animal.speed > 0 ? `${animal.speed} km/h` : animal.status}
                   </Text>
-                  <View style={[styles.badge, { backgroundColor: animal.status === 'Moving' ? Colors.success : categoryColor }]}>
-                    <Text style={styles.badgeText}>
+                  <View style={[styles.statusBadge, { backgroundColor: animal.status === 'Moving' ? Colors.success : categoryColor }]}>
+                    <Text style={styles.statusBadgeText}>
                       {getCategoryLabel(animal.category).toUpperCase()}
                     </Text>
                   </View>
@@ -252,51 +253,57 @@ const styles = StyleSheet.create({
   },
   closeIcon: {
     position: 'absolute',
-    top: 12,
-    right: 16,
+    top: 14,
+    right: 18,
     zIndex: 5,
   },
   header: {
     flexDirection: 'row', justifyContent: 'space-between',
-    alignItems: 'flex-start', marginBottom: 16,
+    alignItems: 'center', marginBottom: 20,
+    paddingHorizontal: 4,
   },
   headerLeft: { flexDirection: 'row', alignItems: 'center', flex: 1 },
-  nameBlock: { marginLeft: 10 },
+  categoryBadge: {
+    width: 40, height: 40, borderRadius: 10,
+    justifyContent: 'center', alignItems: 'center',
+    borderWidth: 1,
+  },
+  nameBlock: { marginLeft: 12 },
   name: { color: Colors.textPrimary, fontSize: 18, fontWeight: 'bold' },
   subtitle: { color: Colors.textSecondary, fontSize: 12, marginTop: 2 },
   headerRight: { alignItems: 'flex-end' },
   tempValue: { fontSize: 24, fontWeight: 'bold' },
-  badge: {
-    paddingHorizontal: 10, paddingVertical: 3, borderRadius: 10, marginTop: 4,
+  statusBadge: {
+    paddingHorizontal: 8, paddingVertical: 2, borderRadius: 6, marginTop: 4,
   },
-  badgeText: { color: '#FFFFFF', fontSize: 10, fontWeight: 'bold', letterSpacing: 0.5 },
+  statusBadgeText: { color: '#FFFFFF', fontSize: 9, fontWeight: '900', letterSpacing: 0.5 },
   mapPreviewContainer: {
-    height: 160,
-    borderRadius: 14,
+    height: 140,
+    borderRadius: 16,
     overflow: 'hidden',
-    marginBottom: 16,
+    marginBottom: 20,
     borderWidth: 1,
     borderColor: Colors.border,
   },
   infoGrid: {
     backgroundColor: Colors.backgroundSecondary,
-    borderRadius: 12, padding: 12, marginBottom: 12,
+    borderRadius: 16, padding: 14, marginBottom: 16,
+    borderWidth: 1, borderColor: Colors.border,
   },
   infoRow: {
     flexDirection: 'row', justifyContent: 'space-between',
-    paddingVertical: 6, borderBottomWidth: 0.5, borderBottomColor: Colors.border,
+    paddingVertical: 8, borderBottomWidth: 0.5, borderBottomColor: Colors.border,
   },
-  infoLabel: { color: Colors.textSecondary, fontSize: 13 },
-  infoValue: { color: Colors.textPrimary, fontSize: 13, fontWeight: '600' },
+  infoLabel: { color: Colors.textSecondary, fontSize: 13, fontWeight: '500' },
+  infoValue: { color: Colors.textPrimary, fontSize: 13, fontWeight: '700' },
   actionRow: {
-    marginTop: 12,
-    paddingTop: 12,
-    borderTopWidth: 0.5,
-    borderTopColor: Colors.border,
+    marginTop: 8,
+    marginBottom: 20,
   },
   shareBtn: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
-    backgroundColor: '#25D366', borderRadius: 10, paddingVertical: 12, gap: 8,
+    backgroundColor: '#25D366', borderRadius: 12, paddingVertical: 14, gap: 10,
+    shadowColor: '#25D366', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.2, shadowRadius: 8, elevation: 4,
   },
-  shareBtnText: { color: Colors.textOnPrimary, fontSize: 15, fontWeight: 'bold' },
+  shareBtnText: { color: '#FFFFFF', fontSize: 15, fontWeight: 'bold' },
 });

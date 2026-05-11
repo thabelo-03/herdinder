@@ -78,14 +78,20 @@ export default function AnimalDetailScreen() {
         <View style={styles.heroCard}>
           <View style={styles.heroTop}>
             <View style={styles.heroLeft}>
-              <View style={[styles.heroIcon, { borderColor: isCattle ? tempColor : categoryColor }]}>
-                <FontAwesome name={categoryIcon} size={28} color={isCattle ? tempColor : categoryColor} />
+              <View style={[styles.heroIcon, { borderColor: isCattle ? tempColor : categoryColor, backgroundColor: `${isCattle ? tempColor : categoryColor}10` }]}>
+                <FontAwesome name={categoryIcon} size={32} color={isCattle ? tempColor : categoryColor} />
               </View>
               <View>
                 <Text style={styles.heroName}>{animal.name}</Text>
-                <Text style={styles.heroSub}>{animal.location} · {animal.herdName}</Text>
+                <View style={styles.heroSubRow}>
+                  <FontAwesome name="map-marker" size={12} color={Colors.textMuted} />
+                  <Text style={styles.heroSub}> {animal.location} · {animal.herdName}</Text>
+                </View>
                 {!isCattle && animal.plateNumber && (
-                   <Text style={styles.heroSub}>{animal.plateNumber}</Text>
+                   <View style={[styles.heroSubRow, { marginTop: 4 }]}>
+                     <FontAwesome name="id-card-o" size={10} color={Colors.textMuted} />
+                     <Text style={styles.heroSub}> {animal.plateNumber}</Text>
+                   </View>
                 )}
               </View>
             </View>
@@ -93,15 +99,15 @@ export default function AnimalDetailScreen() {
               {isCattle ? (
                 <>
                   <Text style={[styles.heroTemp, { color: tempColor }]}>
-                    {animal.temperature}°C
+                    {animal.temperature.toFixed(1)}°C
                   </Text>
                   <View style={[styles.heroBadge, { backgroundColor: tempStatus.color }]}>
-                    <Text style={styles.heroBadgeText}>{tempStatus.label}</Text>
+                    <Text style={styles.heroBadgeText}>{tempStatus.label.toUpperCase()}</Text>
                   </View>
                 </>
               ) : (
                 <>
-                  <Text style={[styles.heroTemp, { color: categoryColor, fontSize: 24 }]}>
+                  <Text style={[styles.heroTemp, { color: categoryColor, fontSize: 26 }]}>
                     {animal.speed != null && animal.speed > 0 ? `${animal.speed} km/h` : animal.status}
                   </Text>
                   <View style={[styles.heroBadge, { backgroundColor: animal.status === 'Moving' ? Colors.success : categoryColor }]}>
@@ -148,21 +154,25 @@ export default function AnimalDetailScreen() {
 
         {/* Device Information */}
         <View style={styles.tagCard}>
-          <Text style={styles.sectionTitle}>Device Information</Text>
-          {/* TODO: HARDWARE INTEGRATION - Show real LoRaWAN credentials */}
-          <InfoRow label="Device ID" value={animal.tagId} />
-          <InfoRow label="DevEUI" value="00:1A:2B:3C:4D:5E:6F:70" />
-          <InfoRow label="Type" value={isCattle ? "LoRaWAN Ear Tag (EU868)" : "Dragino TrackerD (EU868)"} />
-          <InfoRow label="Firmware" value="v1.2.3" />
-          <InfoRow label="Last Uplink" value={formatLastSeen(animal.lastSeen)} />
-          <InfoRow label="RSSI" value="-87 dBm" />
-          <InfoRow label="SNR" value="8.5 dB" />
-          {!isCattle && animal.buzzerEnabled !== undefined && (
-            <InfoRow label="Buzzer Alarm" value={animal.buzzerEnabled ? "Armed" : "Disabled"} />
-          )}
-          {!isCattle && animal.tamperDetected !== undefined && (
-             <InfoRow label="Tamper Status" value={animal.tamperDetected ? "DETECTED" : "Normal"} />
-          )}
+          <View style={styles.sectionHeader}>
+            <FontAwesome name="microchip" size={16} color={Colors.primary} />
+            <Text style={styles.sectionTitle}>Device Information</Text>
+          </View>
+          <View style={styles.infoGrid}>
+            <InfoRow label="Device ID" value={animal.tagId} icon="tag" />
+            <InfoRow label="DevEUI" value="00:1A:2B:3C:4D:5E:6F:70" icon="fingerprint" />
+            <InfoRow label="Type" value={isCattle ? "LoRa Ear Tag" : "GPS Tracker"} icon="info-circle" />
+            <InfoRow label="Firmware" value="v1.2.3" icon="code-fork" />
+            <InfoRow label="RSSI" value="-87 dBm" icon="signal" />
+            <InfoRow label="SNR" value="8.5 dB" icon="bar-chart" />
+            {!isCattle && animal.buzzerEnabled !== undefined && (
+              <InfoRow label="Buzzer" value={animal.buzzerEnabled ? "Armed" : "Off"} icon="volume-up" />
+            )}
+            {!isCattle && animal.tamperDetected !== undefined && (
+               <InfoRow label="Tamper" value={animal.tamperDetected ? "⚠ ALERT" : "OK"} icon="warning" 
+                 valueColor={animal.tamperDetected ? Colors.danger : Colors.success} />
+            )}
+          </View>
         </View>
 
         {/* Quick Actions */}
@@ -212,22 +222,25 @@ function VitalCard({ icon, label, value, color }: { icon: string; label: string;
   );
 }
 
-function InfoRow({ label, value }: { label: string; value: string }) {
+function InfoRow({ label, value, icon, valueColor }: { label: string; value: string; icon?: string; valueColor?: string }) {
   return (
     <View style={styles.infoRow}>
-      <Text style={styles.infoLabel}>{label}</Text>
-      <Text style={styles.infoValue}>{value}</Text>
+      <View style={styles.infoLabelGroup}>
+        {icon && <FontAwesome name={icon as any} size={12} color={Colors.textMuted} style={{ width: 16 }} />}
+        <Text style={styles.infoLabel}>{label}</Text>
+      </View>
+      <Text style={[styles.infoValue, valueColor ? { color: valueColor } : null]}>{value}</Text>
     </View>
   );
 }
 
 function ActionButton({ icon, label, color, onPress }: { icon: string; label: string; color: string; onPress: () => void }) {
   return (
-    <TouchableOpacity style={styles.actionBtn} onPress={onPress}>
-      <View style={[styles.actionIcon, { backgroundColor: `${color}15` }]}>
-        <FontAwesome name={icon as any} size={18} color={color} />
+    <TouchableOpacity style={styles.actionBtn} onPress={onPress} activeOpacity={0.6}>
+      <View style={[styles.actionIcon, { backgroundColor: `${color}15`, borderColor: `${color}30` }]}>
+        <FontAwesome name={icon as any} size={20} color={color} />
       </View>
-      <Text style={styles.actionLabel}>{label}</Text>
+      <Text style={[styles.actionLabel, { color }]}>{label}</Text>
     </TouchableOpacity>
   );
 }
@@ -267,41 +280,44 @@ const styles = StyleSheet.create({
     borderWidth: 2,
   },
   heroName: { color: Colors.textPrimary, fontSize: 20, fontWeight: 'bold' },
-  heroSub: { color: Colors.textSecondary, fontSize: 12, marginTop: 2 },
+  heroSub: { color: Colors.textSecondary, fontSize: 13 },
+  heroSubRow: { flexDirection: 'row', alignItems: 'center', marginTop: 4 },
   heroRight: { alignItems: 'flex-end' },
-  heroTemp: { fontSize: 32, fontWeight: 'bold' },
+  heroTemp: { fontSize: 36, fontWeight: 'bold' },
   heroBadge: {
-    paddingHorizontal: 12,
+    paddingHorizontal: 10,
     paddingVertical: 4,
-    borderRadius: 12,
-    marginTop: 4,
+    borderRadius: 8,
+    marginTop: 6,
   },
-  heroBadgeText: { color: '#FFFFFF', fontSize: 11, fontWeight: 'bold', letterSpacing: 0.5 },
+  heroBadgeText: { color: '#FFFFFF', fontSize: 10, fontWeight: '900', letterSpacing: 1 },
   // Vitals
   vitalsGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 10,
-    marginTop: 16,
+    gap: 12,
+    marginTop: 20,
   },
   vitalCard: {
-    width: (Dimensions.get('window').width - 50) / 2 - 5,
-    backgroundColor: Colors.card,
-    borderRadius: 14,
-    padding: 16,
-    alignItems: 'center',
-    gap: 6,
-    borderWidth: 1,
-    borderColor: Colors.border,
-  },
-  vitalValue: { fontSize: 18, fontWeight: 'bold' },
-  vitalLabel: { color: Colors.textSecondary, fontSize: 11 },
-  // Chart
-  chartCard: {
+    flex: 1,
+    minWidth: '45%',
     backgroundColor: Colors.card,
     borderRadius: 16,
     padding: 16,
-    marginTop: 16,
+    alignItems: 'center',
+    gap: 8,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 4, elevation: 2,
+  },
+  vitalValue: { fontSize: 20, fontWeight: 'bold' },
+  vitalLabel: { color: Colors.textSecondary, fontSize: 11, fontWeight: '600' },
+  // Chart
+  chartCard: {
+    backgroundColor: Colors.card,
+    borderRadius: 20,
+    padding: 16,
+    marginTop: 20,
     borderWidth: 1,
     borderColor: Colors.border,
   },
@@ -309,60 +325,67 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 8,
+    marginBottom: 16,
   },
-  chartTitle: { color: Colors.textPrimary, fontSize: 15, fontWeight: '700' },
-  chartPills: { flexDirection: 'row', gap: 6 },
+  chartTitle: { color: Colors.textPrimary, fontSize: 16, fontWeight: '700' },
+  chartPills: { flexDirection: 'row', gap: 8 },
   chartPill: {
-    paddingHorizontal: 12,
-    paddingVertical: 4,
-    borderRadius: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 6,
+    borderRadius: 10,
     backgroundColor: Colors.backgroundSecondary,
-  },
-  chartPillActive: {
-    backgroundColor: Colors.primary,
-  },
-  chartPillText: { color: Colors.textSecondary, fontSize: 11, fontWeight: '600' },
-  chartPillTextActive: { color: Colors.textOnPrimary, fontSize: 11, fontWeight: '600' },
-  // Tag info
-  tagCard: {
-    backgroundColor: Colors.card,
-    borderRadius: 16,
-    padding: 16,
-    marginTop: 16,
     borderWidth: 1,
     borderColor: Colors.border,
   },
+  chartPillActive: {
+    backgroundColor: Colors.primary,
+    borderColor: Colors.primary,
+  },
+  chartPillText: { color: Colors.textSecondary, fontSize: 11, fontWeight: '700' },
+  chartPillTextActive: { color: Colors.textOnPrimary, fontSize: 11, fontWeight: '700' },
+  // Tag info
+  tagCard: {
+    backgroundColor: Colors.card,
+    borderRadius: 20,
+    padding: 18,
+    marginTop: 20,
+    borderWidth: 1,
+    borderColor: Colors.border,
+  },
+  sectionHeader: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 16 },
   sectionTitle: {
     color: Colors.textPrimary,
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: '700',
-    marginBottom: 12,
   },
+  infoGrid: { gap: 2 },
   infoRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    paddingVertical: 8,
+    paddingVertical: 10,
     borderBottomWidth: 0.5,
     borderBottomColor: Colors.border,
   },
-  infoLabel: { color: Colors.textSecondary, fontSize: 13 },
-  infoValue: { color: Colors.textPrimary, fontSize: 13, fontWeight: '500' },
+  infoLabelGroup: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  infoLabel: { color: Colors.textSecondary, fontSize: 13, fontWeight: '500' },
+  infoValue: { color: Colors.textPrimary, fontSize: 13, fontWeight: '700' },
   // Actions
   actionsRow: {
     flexDirection: 'row',
-    justifyContent: 'space-around',
-    marginTop: 20,
+    justifyContent: 'space-between',
+    marginTop: 24,
+    paddingHorizontal: 10,
   },
-  actionBtn: { alignItems: 'center', gap: 6 },
+  actionBtn: { alignItems: 'center', gap: 8 },
   actionIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+    width: 56,
+    height: 56,
+    borderRadius: 16,
     justifyContent: 'center',
     alignItems: 'center',
+    borderWidth: 1,
   },
-  actionLabel: { color: Colors.textSecondary, fontSize: 11 },
+  actionLabel: { fontSize: 11, fontWeight: '700' },
   // Error
   errorState: { flex: 1, justifyContent: 'center', alignItems: 'center', gap: 16 },
   errorText: { color: Colors.textMuted, fontSize: 16 },
