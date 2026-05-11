@@ -4,8 +4,8 @@
  */
 
 import FontAwesome from '@expo/vector-icons/FontAwesome';
-import React from 'react';
-import { Linking, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import React, { useRef } from 'react';
+import { Linking, ScrollView, StyleSheet, Text, TouchableOpacity, View, Animated, PanResponder } from 'react-native';
 import Colors, { getCategoryColor, getCategoryIcon, getCategoryLabel, getTempColor, getTempStatus } from '../constants/Colors';
 import { Animal, SafeZone } from '../types';
 import HerdMapView from './HerdMapView';
@@ -45,10 +45,58 @@ export default function AnimalDetailCard({ animal, onClose, onViewDetail, safeZo
   const categoryIcon = getCategoryIcon(animal.category) as any;
   const tempStatus = getTempStatus(animal.temperature);
 
+  // Animation for swipe-down gesture
+  const translateY = useRef(new Animated.Value(0)).current;
+
+  const panResponder = useRef(
+    PanResponder.create({
+      onStartShouldSetPanResponder: () => true,
+      onStartShouldSetPanResponderCapture: () => true,
+      onMoveShouldSetPanResponder: (evt, gestureState) => {
+        // Only respond to vertical downward swipes and if the scroll view is at the top
+        // For simplicity, let's assume the PanResponder takes precedence for now.
+        // A more robust solution would involve checking scroll position.
+        return gestureState.dy > 5 && Math.abs(gestureState.dx) < Math.abs(gestureState.dy);
+      },
+      onMoveShouldSetPanResponderCapture: (evt, gestureState) => {
+        return gestureState.dy > 5 && Math.abs(gestureState.dx) < Math.abs(gestureState.dy);
+      },
+      onPanResponderMove: (evt, gestureState) => {
+        // Only allow downward movement
+        if (gestureState.dy > 0) {
+          translateY.setValue(gestureState.dy);
+        }
+      },
+      onPanResponderRelease: (evt, gestureState) => {
+        if (gestureState.dy > 100) { // If swiped down more than 100 pixels
+          Animated.timing(translateY, {
+            toValue: 600, // Animate off-screen downwards (maxHeight is 550)
+            duration: 200,
+            useNativeDriver: true,
+          }).start(onClose); // Call onClose after animation completes
+        } else {
+          Animated.spring(translateY, { toValue: 0, useNativeDriver: true, bounciness: 5 }).start();
+        }
+      },
+    })
+  ).current;
+
   return (
-    <View style={styles.container}>
-      {/* Drag handle */}
-      <View style={styles.handleBar} />
+    <Animated.View
+      style={[
+        styles.container,
+        { transform: [{ translateY: translateY }] },
+      ]}
+      {...panResponder.panHandlers} // Apply pan handlers to the Animated.View
+    >
+      {/* Dismiss/Minimise Handle */}
+      <TouchableOpacity onPress={onClose} style={styles.dismissHandle} activeOpacity={0.6}>
+        <View style={styles.handleBar} />
+      </TouchableOpacity>
+
+      <TouchableOpacity style={styles.closeIcon} onPress={onClose}>
+        <FontAwesome name="times-circle" size={24} color={Colors.textMuted} />
+      </TouchableOpacity>
 
       <ScrollView showsVerticalScrollIndicator={false}>
         {/* Header: Name + Temp/Speed */}
@@ -157,7 +205,7 @@ export default function AnimalDetailCard({ animal, onClose, onViewDetail, safeZo
         {/* Temperature Chart (relevant for cattle, shows ambient temp for vehicles) */}
         <TempChart data={animal.temperatureHistory} />
       </ScrollView>
-    </View>
+    </Animated.View>
   );
 }
 
@@ -196,6 +244,18 @@ const styles = StyleSheet.create({
     width: 40, height: 4, borderRadius: 2,
     backgroundColor: Colors.textMuted, alignSelf: 'center', marginBottom: 12,
   },
+  dismissHandle: {
+    width: '100%',
+    paddingTop: 4,
+    paddingBottom: 8,
+    alignItems: 'center',
+  },
+  closeIcon: {
+    position: 'absolute',
+    top: 12,
+    right: 16,
+    zIndex: 5,
+  },
   header: {
     flexDirection: 'row', justifyContent: 'space-between',
     alignItems: 'flex-start', marginBottom: 16,
@@ -228,9 +288,6 @@ const styles = StyleSheet.create({
   },
   infoLabel: { color: Colors.textSecondary, fontSize: 13 },
   infoValue: { color: Colors.textPrimary, fontSize: 13, fontWeight: '600' },
-});
-
-const actionStyles = StyleSheet.create({
   actionRow: {
     marginTop: 12,
     paddingTop: 12,
@@ -243,4 +300,3 @@ const actionStyles = StyleSheet.create({
   },
   shareBtnText: { color: Colors.textOnPrimary, fontSize: 15, fontWeight: 'bold' },
 });
-Object.assign(styles, actionStyles);
