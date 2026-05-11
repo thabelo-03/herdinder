@@ -297,6 +297,17 @@ export const mockAlerts: Alert[] = [
     read: false,
     createdAt: new Date(Date.now() - 5 * 60 * 1000),
   },
+  {
+    id: 'a10',
+    animalId: '3',
+    animalName: 'Cow 003',
+    assetCategory: 'cattle',
+    type: 'THEFT_ALERT',
+    message: 'POTENTIAL THEFT: Cow 003 is 4.2km from home and moving further away rapidly.',
+    severity: 'critical',
+    read: false,
+    createdAt: new Date(Date.now() - 2 * 60 * 1000),
+  },
 ];
 
 export const mockGateway: Gateway = {

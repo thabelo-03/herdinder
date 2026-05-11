@@ -77,7 +77,7 @@ function buildIcon(animal: Animal, isSelected: boolean): L.DivIcon {
           position:relative;
           z-index:2;
         ">
-          <div style="color:#fff;font-size:11px;font-weight:700;font-family:sans-serif">${animal.name}</div>
+          <div style="color:#fff;font-size:13px;font-weight:800;font-family:sans-serif">${animal.name}</div>
           <div style="color:${color};font-size:13px;font-weight:700;font-family:sans-serif;margin-top:2px">${statusLabel}</div>
         </div>
         <div style="position:relative;display:flex;align-items:center;justify-content:center;margin-top:-2px;">

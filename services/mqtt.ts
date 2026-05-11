@@ -51,6 +51,7 @@ const ALERT_THRESHOLDS = {
   LOW_BATTERY: 3.2,    // V (or 20%)
   OFFLINE_HOURS: 12,   // Hours with no reading
   STATIONARY_HOURS: 2, // Hours with no movement
+  THEFT_DISTANCE: 3,   // km from home
 };
 
 /**
@@ -80,23 +81,51 @@ export function processUplink(payload: TTNUplink): void {
   const animal = store.animals.find((a) => a.tagId === deviceId);
   
   if (animal) {
-    const isMoving = decoded.motion !== undefined ? decoded.motion : true; // Default to moving if not specified
+    const isMoving = decoded.motion !== undefined ? decoded.motion : true;
     const status = isMoving ? 'Moving' : 'Stationary';
     const lastMovedAt = isMoving ? new Date() : (animal.lastMovedAt || animal.lastSeen);
+    const newLat = decoded.latitude || animal.latitude;
+    const newLng = decoded.longitude || animal.longitude;
+
+    // Calculate new distance from home (gateway)
+    const gateway = store.gateway;
+    const newDist = calculateDistance(
+      newLat, newLng, 
+      gateway.location.latitude, gateway.location.longitude
+    );
 
     store.updateAnimal(animal.id, {
       temperature: decoded.temperature,
-      battery: decoded.battery * 10, // Convert voltage to percentage estimate
+      battery: decoded.battery * 10,
       lastSeen: new Date(),
       lastMovedAt,
       status,
-      latitude: decoded.latitude || animal.latitude,
-      longitude: decoded.longitude || animal.longitude,
+      prevLatitude: animal.latitude,
+      prevLongitude: animal.longitude,
+      latitude: newLat,
+      longitude: newLng,
+      prevDistanceFromHome: animal.distanceFromHome,
+      distanceFromHome: newDist,
     });
     
     // Check alert rules
-    checkAlertRules(animal.id, animal.name, decoded.temperature, decoded.battery, status, lastMovedAt);
+    checkAlertRules(animal.id, animal.name, decoded.temperature, decoded.battery, status, lastMovedAt, animal, newDist);
   }
+}
+
+/**
+ * Helper to calculate distance between two coordinates in km
+ */
+function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
+  const R = 6371; // Radius of the earth in km
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLon = (lon2 - lon1) * Math.PI / 180;
+  const a = 
+    Math.sin(dLat/2) * Math.sin(dLat/2) +
+    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
+    Math.sin(dLon/2) * Math.sin(dLon/2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+  return R * c;
 }
 
 /**
@@ -108,7 +137,9 @@ function checkAlertRules(
   temperature: number,
   battery: number,
   status: string,
-  lastMovedAt: Date
+  lastMovedAt: Date,
+  animal: any,
+  currentDist: number
 ): void {
   const alertStore = useAlertStore.getState();
   
@@ -154,6 +185,26 @@ function checkAlertRules(
         read: false,
         createdAt: new Date(),
       });
+    }
+  }
+
+  // Theft Detection (Cattle moving fast away from home > 3km)
+  if (animal.category === 'cattle' && currentDist > ALERT_THRESHOLDS.THEFT_DISTANCE) {
+    const isMovingAway = animal.prevDistanceFromHome ? currentDist > animal.prevDistanceFromHome : false;
+    
+    // If moving away rapidly (e.g., speed > 5km/h for cattle is suspicious, usually they graze slowly)
+    // Or just moving away while already 3km+ out
+    if (isMovingAway && status === 'Moving') {
+       alertStore.addAlert({
+         id: `alert-theft-${animalId}-${Date.now()}`,
+         animalId,
+         animalName,
+         type: 'THEFT_ALERT',
+         message: `POTENTIAL THEFT: ${animalName} is ${currentDist.toFixed(1)}km from home and moving further away rapidly.`,
+         severity: 'critical',
+         read: false,
+         createdAt: new Date(),
+       });
     }
   }
 }

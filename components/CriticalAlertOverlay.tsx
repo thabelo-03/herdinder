@@ -48,7 +48,7 @@ export default function CriticalAlertOverlay() {
                 </View>
                 <View style={styles.textContainer}>
                     <Text style={styles.title}>CRITICAL ALERT</Text>
-                    <Text style={styles.message} numberOfLines={2}>{latestCritical.message}</Text>
+                    <Text style={styles.message}>{latestCritical.message}</Text>
                 </View>
                 <TouchableOpacity
                     style={styles.viewBtn}

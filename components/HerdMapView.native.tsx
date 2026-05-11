@@ -313,10 +313,10 @@ export default function HerdMapView({
                     <View style={[styles.categoryBadge, { backgroundColor: pinColor }]}>
                       <FontAwesome name={iconName} size={10} color="#000" />
                     </View>
-                    <Text style={styles.markerIdText}>{animal.tagId}</Text>
+                    <Text style={styles.markerNameText} numberOfLines={1}>{animal.name}</Text>
                   </View>
 
-                  <Text style={styles.markerNameText} numberOfLines={1}>{animal.name}</Text>
+                  <Text style={styles.markerIdText}>{animal.tagId}</Text>
 
                   <View style={styles.markerFooter}>
                     <Text style={[styles.markerTempText, { color: getTempColor(animal.temperature) }]}>

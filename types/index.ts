@@ -28,6 +28,9 @@ export interface Animal {
   distanceFromHome: number;      // km
   latitude: number;
   longitude: number;
+  prevLatitude?: number;
+  prevLongitude?: number;
+  prevDistanceFromHome?: number;
   speed?: number;                // km/h — GPS trackers only
   temperatureHistory: TempReading[];
   // Vehicle-specific

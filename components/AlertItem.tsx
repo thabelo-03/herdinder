@@ -108,7 +108,7 @@ const styles = StyleSheet.create({
   },
   typeLabel: { fontSize: 11, fontWeight: 'bold', letterSpacing: 0.5 },
   time: { color: Colors.textSecondary, fontSize: 11 },
-  message: { color: Colors.textPrimary, fontSize: 13, lineHeight: 18 },
+  message: { color: Colors.textPrimary, fontSize: 13, lineHeight: 19, marginTop: 2 },
   unreadDot: {
     width: 8, height: 8, borderRadius: 4, backgroundColor: Colors.primary, marginLeft: 8,
   },
