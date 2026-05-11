@@ -14,10 +14,10 @@ import {
   Linking,
 } from 'react-native';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
+import { useRouter } from 'expo-router';
 import Colors from '../../constants/Colors';
 import { useAuthStore } from '../../store/authStore';
 import { useAnimalStore } from '../../store/animalStore';
-import { useRouter } from 'expo-router';
 
 interface MenuItemProps {
   icon: string;
@@ -49,10 +49,10 @@ function MenuItem({ icon, label, subtitle, color = Colors.textPrimary, onPress, 
 }
 
 export default function MoreScreen() {
+  const router = useRouter();
   const user = useAuthStore((s) => s.user);
   const gateway = useAnimalStore((s) => s.gateway);
   const animals = useAnimalStore((s) => s.animals);
-  const router = useRouter();
 
   const handleWhatsApp = () => {
     Linking.openURL('https://wa.me/263777926123');
@@ -129,6 +129,7 @@ export default function MoreScreen() {
           <MenuItem icon="language" label="Language" subtitle="English · Ndebele" color={Colors.textPrimary} onPress={() => router.push('/more/language')} />
           <MenuItem icon="refresh" label="Offline Data" subtitle="Sync & cache settings" color={Colors.info} onPress={() => router.push('/more/offline-data')} />
           <MenuItem icon="shield" label="Privacy & Security" color={Colors.textSecondary} onPress={() => router.push('/more/privacy')} />
+          <MenuItem icon="server" label="Admin Dashboard" subtitle="Manage system infrastructure" color={Colors.danger} onPress={() => router.push('/admin')} />
         </View>
 
         <Text style={styles.sectionTitle}>SUPPORT</Text>
@@ -136,6 +137,7 @@ export default function MoreScreen() {
           <MenuItem icon="whatsapp" label="WhatsApp Support" subtitle="077 792 6123" color="#25D366" onPress={handleWhatsApp} />
           <MenuItem icon="question-circle" label="Help & FAQ" color={Colors.textSecondary} onPress={() => router.push('/more/help')} />
           <MenuItem icon="info-circle" label="About HerdFinder" subtitle="v1.0.0" color={Colors.primary} onPress={() => router.push('/more/about')} />
+          <MenuItem icon="sign-out" label="Log Out (Test UI)" color={Colors.danger} onPress={() => router.replace('/auth/login')} />
         </View>
 
         {/* Promo Banner */}
