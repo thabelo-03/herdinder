@@ -25,6 +25,7 @@ function useLeafletCSS() {
 
       const style = document.createElement('style');
       style.innerHTML = `
+        .leaflet-container { background: #0a0a14 !important; }
         @keyframes hf-breathe {
           0% { transform: scale(1); opacity: 0.7; }
           50% { transform: scale(2.5); opacity: 0; }
@@ -41,6 +42,7 @@ function useLeafletCSS() {
           pointer-events: none;
           z-index: 1;
         }
+        .leaflet-div-icon { background: transparent !important; border: none !important; }
       `;
       document.head.appendChild(style);
     }
@@ -113,9 +115,11 @@ function MapContent({ animals, safeZone, selectedAnimal, onMarkerPress }: Props)
   return (
     <>
       <TileLayer
-        url={`https://api.mapbox.com/styles/v1/mapbox/satellite-streets-v12/tiles/256/{z}/{x}/{y}@2x?access_token=${process.env.EXPO_PUBLIC_MAPBOX_KEY}`}
+        url={`https://api.mapbox.com/styles/v1/mapbox/satellite-streets-v12/tiles/512/{z}/{x}/{y}@2x?access_token=${process.env.EXPO_PUBLIC_MAPBOX_KEY}`}
         attribution='&copy; <a href="https://www.mapbox.com/about/maps/">Mapbox</a>'
-        maxZoom={19}
+        maxZoom={20}
+        tileSize={512}
+        zoomOffset={-1}
       />
       <Polygon
         positions={safeZonePositions}
@@ -136,9 +140,13 @@ function MapContent({ animals, safeZone, selectedAnimal, onMarkerPress }: Props)
 export default function InnerMap(props: Props) {
   useLeafletCSS();
 
+  const center = props.safeZone.coordinates.length > 0 
+    ? [props.safeZone.coordinates[0].latitude, props.safeZone.coordinates[0].longitude] as [number, number]
+    : [-21.416589, 28.064443] as [number, number];
+
   return (
     <View style={styles.container}>
-      <MapContainer center={[-21.416589, 28.064443]} zoom={13} style={{ width: '100%', height: '100%' }} zoomControl={false}>
+      <MapContainer center={center} zoom={15} style={{ width: '100%', height: '100%' }} zoomControl={false}>
         <MapContent {...props} />
       </MapContainer>
       {!props.isPreview && (

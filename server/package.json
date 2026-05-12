@@ -1,0 +1,20 @@
+{
+  "name": "herdfinder-server",
+  "version": "1.0.0",
+  "description": "Backend bridge for HerdFinder to MongoDB Atlas",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "nodemon index.js",
+    "simulate": "node simulate.js",
+    "test-db": "node test-db.js"
+  },
+  "dependencies": {
+    "dotenv": "^16.4.7",
+    "mongoose": "^7.0.0",
+    "mqtt": "^5.15.1"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.9"
+  }
+}
