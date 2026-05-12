@@ -110,7 +110,7 @@ export interface Subscription {
   plan: 'starter' | 'standard' | 'community' | 'enterprise';
   tagCount: number;
   pricePerTag: number;
-  currency: 'USD' | 'ZWG';
+  currency: 'USD' | 'ZWG' | 'ZAR';
   status: 'active' | 'trial' | 'expired' | 'cancelled';
   startDate: Date;
   endDate: Date;

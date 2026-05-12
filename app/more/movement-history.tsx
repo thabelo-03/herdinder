@@ -4,13 +4,22 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import Colors, { getCategoryColor, getCategoryIcon } from '../../constants/Colors';
 import { useAnimalStore } from '../../store/animalStore';
+import { Animal } from '../../types';
+
+interface HistoryLog {
+  id: string;
+  animal: Animal;
+  type: 'movement' | 'alert';
+  time: Date;
+  desc: string;
+}
 
 export default function MovementHistoryScreen() {
   const animals = useAnimalStore((s) => s.animals);
   
   // Mock history data based on current animals
-  const [history] = useState(() => {
-    const logs = [];
+  const [history] = useState<HistoryLog[]>(() => {
+    const logs: HistoryLog[] = [];
     animals.forEach(a => {
       // Mock some recent events
       logs.push({
@@ -33,7 +42,7 @@ export default function MovementHistoryScreen() {
     return logs.sort((a, b) => b.time.getTime() - a.time.getTime());
   });
 
-  const renderItem = ({ item }: { item: any }) => {
+  const renderItem = ({ item }: { item: HistoryLog }) => {
     const isAlert = item.type === 'alert';
     const catColor = getCategoryColor(item.animal.category);
     const catIcon = getCategoryIcon(item.animal.category) as any;

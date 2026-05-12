@@ -49,6 +49,7 @@ export default function RegisterDeviceScreen() {
       latitude: gateway.location.latitude + (Math.random() - 0.5) * 0.01,
       longitude: gateway.location.longitude + (Math.random() - 0.5) * 0.01,
       temperatureHistory: [],
+      positionHistory: [],
     };
 
     addAnimal(newDevice);
