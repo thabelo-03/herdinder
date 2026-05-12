@@ -35,13 +35,18 @@ if (typeof global.Buffer === 'undefined') {
 
 let client: MqttClient | null = null;
 
-// Configuration - TODO: Move to .env when hardware is connected
+// Configuration - THE THINGS NETWORK (Production)
+const TTN_APP_ID = 'herdfinder01';
+const TTN_MQTT_URL = 'wss://eu1.cloud.thethings.network:8883/mqtt';
+const TTN_USERNAME = 'herdfinder01@ttn';
+const TTN_PASSWORD = 'NNSXS.73OSXCIFN7BFGRQ7SSA2Q4YKIJI2UNPFIBN3RWI.2H5MAZDOR3SRIPUJUYQRSD4QPTVPGXZEX73FPLQXSB2IE7KQBPFQ';
+
 const MQTT_CONFIG = {
-  brokerUrl: 'wss://eu1.cloud.thethings.network:443',
-  appId: 'herdfinder-matsouth',
-  apiKey: 'NNSXS.YOUR_API_KEY_HERE',
-  // Topic pattern for subscribing to all devices
-  topic: 'v3/herdfinder-matsouth@ttn/devices/+/up',
+  brokerUrl: TTN_MQTT_URL,
+  appId: TTN_APP_ID,
+  apiKey: TTN_PASSWORD,
+  // Topic pattern for subscribing to all devices in the production app
+  topic: `v3/${TTN_APP_ID}@ttn/devices/+/up`,
 };
 
 // Alert thresholds
