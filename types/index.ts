@@ -19,6 +19,9 @@ export interface Animal {
   herdName: string;              // "Herd A" for cattle, "Fleet 1" for vehicles
   location: string;              // e.g., "Mat South"
   tagId: string;                 // DevEUI from LoRaWAN device
+  devEUI?: string;               // 64-bit Device EUI
+  appEUI?: string;               // 64-bit Application EUI
+  appKey?: string;               // 128-bit Application Key
   temperature: number;
   humidity?: number;             // Dragino TrackerD supports humidity
   battery: number;               // percentage 0-100

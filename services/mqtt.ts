@@ -37,7 +37,7 @@ let client: MqttClient | null = null;
 
 // Configuration - THE THINGS NETWORK (Production)
 const TTN_APP_ID = 'herdfinder01';
-const TTN_MQTT_URL = 'wss://eu1.cloud.thethings.network:8883/mqtt';
+const TTN_MQTT_URL = 'wss://eu1.cloud.thethings.network:443/mqtt';
 const TTN_USERNAME = 'herdfinder01@ttn';
 const TTN_PASSWORD = 'NNSXS.73OSXCIFN7BFGRQ7SSA2Q4YKIJI2UNPFIBN3RWI.2H5MAZDOR3SRIPUJUYQRSD4QPTVPGXZEX73FPLQXSB2IE7KQBPFQ';
 

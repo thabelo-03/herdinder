@@ -168,9 +168,10 @@ export default function AnimalDetailScreen() {
           </View>
           <View style={styles.infoGrid}>
             <InfoRow label="Device ID" value={animal.tagId} icon="tag" />
-            <InfoRow label="DevEUI" value="00:1A:2B:3C:4D:5E:6F:70" icon="fingerprint" />
+            <InfoRow label="DevEUI" value={animal.devEUI || "Not Set"} icon="fingerprint" />
+            {animal.appKey && <InfoRow label="AppKey" value={animal.appKey.substring(0, 8) + "..."} icon="key" />}
             <InfoRow label="Type" value={isCattle ? "LoRa Ear Tag" : "GPS Tracker"} icon="info-circle" />
-            <InfoRow label="Firmware" value="v1.2.3" icon="code-fork" />
+            <InfoRow label="Firmware" value="v2.1.0" icon="code-fork" />
             <InfoRow label="RSSI" value="-87 dBm" icon="signal" />
             <InfoRow label="SNR" value="8.5 dB" icon="bar-chart" />
             {!isCattle && animal.buzzerEnabled !== undefined && (

@@ -14,6 +14,8 @@ export default function RegisterDeviceScreen() {
 
   const [name, setName] = useState('');
   const [tagId, setTagId] = useState('');
+  const [devEUI, setDevEUI] = useState('');
+  const [appKey, setAppKey] = useState('');
   const [category, setCategory] = useState<AssetCategory>('cattle');
 
   const categories: { label: string; value: AssetCategory }[] = [
@@ -36,6 +38,9 @@ export default function RegisterDeviceScreen() {
       herdName: category === 'cattle' ? 'New Herd' : 'New Fleet',
       location: gateway.name,
       tagId: tagId.trim(),
+      devEUI: devEUI.trim(),
+      appEUI: '0000000000000000',
+      appKey: appKey.trim(),
       temperature: 36.5,
       battery: 100,
       status: 'Stationary',
@@ -103,20 +108,45 @@ export default function RegisterDeviceScreen() {
           </View>
 
           <View style={styles.formGroup}>
-            <Text style={styles.label}>Hardware Tag ID</Text>
+            <Text style={styles.label}>Hardware Tag ID (End Device ID)</Text>
             <View style={styles.inputWithScan}>
               <TextInput 
                 style={[styles.input, { flex: 1, borderTopRightRadius: 0, borderBottomRightRadius: 0, borderRightWidth: 0 }]}
-                placeholder="e.g. HF-000042"
+                placeholder="e.g. tag01"
                 placeholderTextColor={Colors.textMuted}
                 value={tagId}
                 onChangeText={setTagId}
-                autoCapitalize="characters"
+                autoCapitalize="none"
               />
               <TouchableOpacity style={styles.scanBtn} onPress={() => Alert.alert('Camera', 'QR Scanner would open here.')}>
                 <FontAwesome name="qrcode" size={20} color={Colors.textOnPrimary} />
               </TouchableOpacity>
             </View>
+          </View>
+
+          <View style={styles.formGroup}>
+            <Text style={styles.label}>Device EUI (DevEUI)</Text>
+            <TextInput 
+              style={styles.input}
+              placeholder="e.g. 70B3D57ED0077732"
+              placeholderTextColor={Colors.textMuted}
+              value={devEUI}
+              onChangeText={setDevEUI}
+              autoCapitalize="characters"
+            />
+          </View>
+
+          <View style={styles.formGroup}>
+            <Text style={styles.label}>App Key (AppKey)</Text>
+            <TextInput 
+              style={styles.input}
+              placeholder="e.g. 2148E1F1C326EEE72483BA9637F5BEEC"
+              placeholderTextColor={Colors.textMuted}
+              value={appKey}
+              onChangeText={setAppKey}
+              autoCapitalize="characters"
+              secureTextEntry
+            />
           </View>
 
           <TouchableOpacity style={styles.submitBtn} onPress={handleRegister}>
