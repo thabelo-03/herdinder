@@ -83,6 +83,7 @@ export interface Gateway {
   name: string;
   status: 'online' | 'offline';
   signalStrength: 'Strong' | 'Medium' | 'Weak';
+  battery: number;               // percentage 0-100
   location: {
     latitude: number;
     longitude: number;

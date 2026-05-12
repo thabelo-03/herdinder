@@ -436,6 +436,7 @@ export const mockGateway: Gateway = {
   name: 'Mat South 01',
   status: 'online',
   signalStrength: 'Strong',
+  battery: 98,
   location: {
     latitude: BASE_LAT,
     longitude: BASE_LNG,
