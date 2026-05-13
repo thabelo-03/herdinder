@@ -12,7 +12,7 @@
 
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { useRouter } from 'expo-router';
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useState, useEffect } from 'react';
 import { Alert, StyleSheet, Text, TouchableOpacity, View, ScrollView, ActivityIndicator, Modal } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -44,6 +44,14 @@ export default function MapScreen() {
   const [isSyncing, setIsSyncing] = useState(false);
   const [syncProgress, setSyncProgress] = useState(0);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [hasHydrated, setHasHydrated] = useState(false);
+
+  // Handle store hydration to prevent UI flicker
+  useEffect(() => {
+    const unsub = useAnimalStore.persist.onFinishHydration(() => setHasHydrated(true));
+    setHasHydrated(useAnimalStore.persist.hasHydrated());
+    return () => unsub();
+  }, []);
 
   const handleLogout = () => {
     setIsMenuOpen(false);
@@ -91,6 +99,14 @@ export default function MapScreen() {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     toggleHeatmap();
   };
+
+  if (!hasHydrated) {
+    return (
+      <View style={[styles.screen, { justifyContent: 'center', alignItems: 'center' }]}>
+        <ActivityIndicator size="large" color={Colors.primary} />
+      </View>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.screen} edges={['top']}>
