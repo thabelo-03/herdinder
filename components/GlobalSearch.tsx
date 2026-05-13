@@ -4,6 +4,7 @@ import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { useRouter } from 'expo-router';
 import { BlurView } from 'expo-blur';
 import Colors from '../constants/Colors';
+import { useAnimalStore } from '../store/animalStore';
 
 // Simple debounce hook
 function useDebounce(value: string, delay: number) {
@@ -27,6 +28,8 @@ export default function GlobalSearch() {
   // 10.0.2.2 is for Android Emulator. localhost is for Web.
   const API_URL = Platform.OS === 'web' ? 'http://localhost:5000/api/search' : 'http://10.0.2.2:5000/api/search';
 
+  const localAnimals = useAnimalStore((s) => s.animals);
+
   useEffect(() => {
     if (debouncedQuery.length < 2) {
       setResults({ assets: [], alerts: [], zones: [] });
@@ -35,21 +38,41 @@ export default function GlobalSearch() {
 
     const fetchResults = async () => {
       setIsLoading(true);
+      
+      // Search local frontend state (mock data)
+      const localMatches = localAnimals.filter(a => 
+        a.name.toLowerCase().includes(debouncedQuery.toLowerCase()) || 
+        a.tagId.toLowerCase().includes(debouncedQuery.toLowerCase()) ||
+        a.plateNumber?.toLowerCase().includes(debouncedQuery.toLowerCase())
+      );
+
       try {
         const response = await fetch(`${API_URL}?q=${encodeURIComponent(debouncedQuery)}`);
         if (response.ok) {
           const data = await response.json();
-          setResults(data);
+          
+          // Combine local frontend data with database data (avoid duplicates)
+          const combinedAssets = [...localMatches];
+          data.assets.forEach((dbAsset: any) => {
+            if (!combinedAssets.some(a => a.tagId === dbAsset.tagId)) {
+              combinedAssets.push(dbAsset);
+            }
+          });
+
+          setResults({ ...data, assets: combinedAssets });
+        } else {
+          setResults({ assets: localMatches, alerts: [], zones: [] });
         }
       } catch (error) {
         console.error('Search API Error:', error);
+        setResults({ assets: localMatches, alerts: [], zones: [] });
       } finally {
         setIsLoading(false);
       }
     };
 
     fetchResults();
-  }, [debouncedQuery]);
+  }, [debouncedQuery, localAnimals]);
 
   const handleResultPress = (assetId: string) => {
     setIsFocused(false);
