@@ -4,6 +4,7 @@ import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { useRouter } from 'expo-router';
 import { BlurView } from 'expo-blur';
 import Colors from '../../constants/Colors';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export default function LoginScreen() {
   const router = useRouter();
@@ -40,7 +41,10 @@ export default function LoginScreen() {
         throw new Error(data.message || 'Failed to login');
       }
 
-      // Success! In a real app, save data.token to AsyncStorage here
+      // Save the token to maintain the session
+      if (data.token) {
+        await AsyncStorage.setItem('auth_token', data.token);
+      }
       router.replace('/(tabs)');
     } catch (err: any) {
       setError(err.message || 'Network error. Make sure your server is running.');
