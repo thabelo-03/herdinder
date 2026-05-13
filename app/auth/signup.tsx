@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TextInput, TouchableOpacity, SafeAreaView, KeyboardAvoidingView, Platform, ScrollView, Image } from 'react-native';
+import { View, Text, StyleSheet, TextInput, TouchableOpacity, SafeAreaView, KeyboardAvoidingView, Platform, ScrollView, Image, ActivityIndicator } from 'react-native';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { useRouter } from 'expo-router';
 import { BlurView } from 'expo-blur';
@@ -11,9 +11,55 @@ export default function SignupScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState('');
 
-  const handleSignup = () => {
-    router.replace('/(tabs)');
+  // 10.0.2.2 is for Android Emulator. localhost is for Web.
+  const API_URL = Platform.OS === 'web' 
+    ? 'http://localhost:5000/api/auth' 
+    : 'http://10.0.2.2:5000/api/auth';
+
+  const handleSignup = async () => {
+    if (!name || !email || !password || !confirmPassword) {
+      setError('Please fill out all fields.');
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      setError('Passwords do not match.');
+      return;
+    }
+
+    if (password.length < 6) {
+      setError('Password must be at least 6 characters.');
+      return;
+    }
+
+    setError('');
+    setIsLoading(true);
+
+    try {
+      const response = await fetch(`${API_URL}/register`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, email, password }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Registration failed');
+      }
+
+      // Success!
+      router.replace('/(tabs)');
+    } catch (err: any) {
+      setError(err.message || 'Network error. Make sure your server is running.');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -32,6 +78,8 @@ export default function SignupScreen() {
           </View>
 
           <BlurView intensity={20} tint="dark" style={styles.formCard}>
+            {error ? <View style={styles.errorContainer}><FontAwesome name="exclamation-circle" size={14} color={Colors.danger} /><Text style={styles.errorText}>{error}</Text></View> : null}
+
             <View style={styles.inputGroup}>
               <FontAwesome name="user" size={16} color={Colors.textMuted} style={styles.inputIcon} />
               <TextInput
@@ -40,7 +88,7 @@ export default function SignupScreen() {
                 placeholderTextColor={Colors.textMuted}
                 autoCapitalize="words"
                 value={name}
-                onChangeText={setName}
+                onChangeText={(text) => { setName(text); setError(''); }}
               />
             </View>
 
@@ -53,7 +101,7 @@ export default function SignupScreen() {
                 keyboardType="email-address"
                 autoCapitalize="none"
                 value={email}
-                onChangeText={setEmail}
+                onChangeText={(text) => { setEmail(text); setError(''); }}
               />
             </View>
 
@@ -63,10 +111,13 @@ export default function SignupScreen() {
                 style={styles.input}
                 placeholder="Password"
                 placeholderTextColor={Colors.textMuted}
-                secureTextEntry
+                secureTextEntry={!showPassword}
                 value={password}
-                onChangeText={setPassword}
+                onChangeText={(text) => { setPassword(text); setError(''); }}
               />
+              <TouchableOpacity onPress={() => setShowPassword(!showPassword)} style={styles.eyeIcon}>
+                <FontAwesome name={showPassword ? "eye" : "eye-slash"} size={18} color={Colors.textMuted} />
+              </TouchableOpacity>
             </View>
 
             <View style={styles.inputGroup}>
@@ -75,10 +126,13 @@ export default function SignupScreen() {
                 style={styles.input}
                 placeholder="Confirm Password"
                 placeholderTextColor={Colors.textMuted}
-                secureTextEntry
+                secureTextEntry={!showConfirmPassword}
                 value={confirmPassword}
-                onChangeText={setConfirmPassword}
+                onChangeText={(text) => { setConfirmPassword(text); setError(''); }}
               />
+              <TouchableOpacity onPress={() => setShowConfirmPassword(!showConfirmPassword)} style={styles.eyeIcon}>
+                <FontAwesome name={showConfirmPassword ? "eye" : "eye-slash"} size={18} color={Colors.textMuted} />
+              </TouchableOpacity>
             </View>
 
             <View style={styles.termsContainer}>
@@ -88,9 +142,15 @@ export default function SignupScreen() {
               </TouchableOpacity>
             </View>
 
-            <TouchableOpacity style={styles.signupBtn} onPress={handleSignup} activeOpacity={0.8}>
-              <Text style={styles.signupBtnText}>Create Account</Text>
-              <FontAwesome name="check" size={16} color={Colors.background} />
+            <TouchableOpacity style={styles.signupBtn} onPress={handleSignup} activeOpacity={0.8} disabled={isLoading}>
+              {isLoading ? (
+                <ActivityIndicator color={Colors.background} />
+              ) : (
+                <>
+                  <Text style={styles.signupBtnText}>Create Account</Text>
+                  <FontAwesome name="check" size={16} color={Colors.background} />
+                </>
+              )}
             </TouchableOpacity>
           </BlurView>
 
@@ -138,6 +198,7 @@ const styles = StyleSheet.create({
   },
   inputIcon: { marginRight: 12, width: 20, textAlign: 'center' },
   input: { flex: 1, color: Colors.textPrimary, fontSize: 16 },
+  eyeIcon: { padding: 8 },
   termsContainer: { flexDirection: 'row', flexWrap: 'wrap', marginBottom: 24, marginTop: 4, justifyContent: 'center' },
   termsText: { color: 'rgba(255,255,255,0.6)', fontSize: 12 },
   termsLink: { color: Colors.primary, fontSize: 12, fontWeight: 'bold' },
@@ -154,4 +215,16 @@ const styles = StyleSheet.create({
   footerContainer: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', marginTop: 'auto' },
   footerText: { color: Colors.textSecondary, fontSize: 14 },
   loginText: { color: Colors.primary, fontSize: 14, fontWeight: 'bold' },
+  errorContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 59, 48, 0.1)',
+    padding: 12,
+    borderRadius: 10,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 59, 48, 0.3)',
+    gap: 8,
+  },
+  errorText: { color: Colors.danger, fontSize: 13, flex: 1 },
 });

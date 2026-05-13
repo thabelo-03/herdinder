@@ -62,6 +62,9 @@ function AlertBadge({ types }: { types?: AlertType[] }) {
   );
 }
 
+import GlobalSearch from '../../components/GlobalSearch';
+import { SafeAreaView } from 'react-native';
+
 export default function TabLayout() {
   const connectMQTT = useAnimalStore((s) => s.connectMQTT);
   const disconnectMQTT = useAnimalStore((s) => s.disconnectMQTT);
@@ -73,8 +76,10 @@ export default function TabLayout() {
   }, [connectMQTT, disconnectMQTT]);
 
   return (
-    <Tabs
-      screenOptions={{
+    <SafeAreaView style={{ flex: 1, backgroundColor: Colors.background }}>
+      <GlobalSearch />
+      <Tabs
+        screenOptions={{
         tabBarActiveTintColor: Colors.tabBarActive,
         tabBarInactiveTintColor: Colors.tabBarInactive,
         tabBarStyle: {
@@ -151,6 +156,7 @@ export default function TabLayout() {
         }}
       />
     </Tabs>
+    </SafeAreaView>
   );
 }
 

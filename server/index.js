@@ -1,7 +1,23 @@
 require('dotenv').config();
 const mongoose = require('mongoose');
 const mqtt = require('mqtt');
+const express = require('express');
+const cors = require('cors');
 const Reading = require('./models/Reading');
+const authRoutes = require('./routes/auth');
+const searchRoutes = require('./routes/search');
+
+// Initialize Express
+const app = express();
+app.use(cors());
+app.use(express.json());
+
+// API Routes
+app.use('/api/auth', authRoutes);
+app.use('/api/search', searchRoutes);
+
+const PORT = process.env.PORT || 5000;
+app.listen(PORT, () => console.log(`🚀 API Server running on port ${PORT}`));
 
 // MongoDB Connection
 mongoose.connect(process.env.MONGODB_URI, {
