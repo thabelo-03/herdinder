@@ -37,6 +37,16 @@ interface AnimalState {
   disconnectMQTT: () => void;
 }
 
+// Custom reviver function to parse date strings back into Date objects
+const dateReviver = (key: string, value: any) => {
+  // Check if the value is a string and matches the ISO 8601 date format
+  if (typeof value === 'string' && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?Z$/.test(value)) {
+    const date = new Date(value);
+    if (!isNaN(date.getTime())) return date; // Return valid Date objects
+  }
+  return value;
+};
+
 export const useAnimalStore = create<AnimalState>()(
   persist(
     (set, get) => ({
@@ -105,7 +115,9 @@ export const useAnimalStore = create<AnimalState>()(
     }),
     {
       name: 'herdfinder-animal-storage', // unique name
-      storage: createJSONStorage(() => AsyncStorage),
+      storage: createJSONStorage(() => AsyncStorage, {
+        reviver: dateReviver,
+      }),
       partialize: (state) => ({ animals: state.animals, safeZone: state.safeZone }), // only persist these parts of the state
     }
   )
