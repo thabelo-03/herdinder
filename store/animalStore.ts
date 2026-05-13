@@ -1,12 +1,15 @@
 /**
  * HerdFinder Animal Store (Zustand)
  * Manages cattle data, selected animal, and readings
+ * Persists safe zone and animal data locally.
  * TODO: HARDWARE INTEGRATION - Connect to MQTT for real-time updates
  */
 
-import { create } from 'zustand';
-import { Animal, Gateway, SafeZone } from '../types';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { create } from 'zustand'; // Import create from zustand
+import { createJSONStorage, persist } from 'zustand/middleware'; // Import persist and createJSONStorage
 import { mockAnimals, mockGateway, mockSafeZone } from '../data/mockData';
+import { Animal, Gateway, SafeZone } from '../types';
 
 interface AnimalState {
   animals: Animal[];
@@ -16,7 +19,7 @@ interface AnimalState {
   isLoading: boolean;
   isLockdownMode: boolean;
   showHeatmap: boolean;
-  
+
   // Actions
   setAnimals: (animals: Animal[]) => void;
   addAnimal: (animal: Animal) => void;
@@ -28,73 +31,82 @@ interface AnimalState {
   toggleLockdown: () => void;
   toggleHeatmap: () => void;
   triggerBuzzer: (animalId: string) => void;
-  
+
   // HARDWARE INTEGRATION
   connectMQTT: () => void;
   disconnectMQTT: () => void;
 }
 
-export const useAnimalStore = create<AnimalState>((set, get) => ({
-  animals: mockAnimals,
-  selectedAnimal: null,
-  gateway: mockGateway,
-  safeZone: mockSafeZone,
-  isLoading: false,
-  isLockdownMode: false,
-  showHeatmap: false,
-  
-  setAnimals: (animals) => set({ animals }),
-  
-  addAnimal: (animal) => set((state) => ({ animals: [...state.animals, animal] })),
-  
-  selectAnimal: (animal) => set({ selectedAnimal: animal }),
-  
-  updateAnimal: (id, updates) => set((state) => ({
-    animals: state.animals.map((a) =>
-      a.id === id ? { ...a, ...updates } : a
-    ),
-  })),
-  
-  setGateway: (gateway) => set({ gateway }),
-  
-  updateSafeZone: (safeZone) => set({ safeZone }),
+export const useAnimalStore = create<AnimalState>()(
+  persist(
+    (set, get) => ({
+      animals: mockAnimals,
+      selectedAnimal: null,
+      gateway: mockGateway,
+      safeZone: mockSafeZone,
+      isLoading: false,
+      isLockdownMode: false,
+      showHeatmap: false,
 
-  toggleLockdown: () => set((state) => ({ isLockdownMode: !state.isLockdownMode })),
-  
-  toggleHeatmap: () => set((state) => ({ showHeatmap: !state.showHeatmap })),
+      setAnimals: (animals) => set({ animals }),
 
-  triggerBuzzer: (animalId) => {
-    const animal = get().animals.find(a => a.id === animalId);
-    if (!animal) return;
-    
-    const newStatus = !animal.buzzerEnabled;
-    
-    // Update local state
-    set((state) => ({
-      animals: state.animals.map(a => 
-        a.id === animalId ? { ...a, buzzerEnabled: newStatus } : a
-      )
-    }));
+      addAnimal: (animal) => set((state) => ({ animals: [...state.animals, animal] })),
 
-    // Send hardware command
-    const { sendBuzzerDownlink } = require('../services/mqtt');
-    sendBuzzerDownlink(animal.tagId, newStatus);
-  },
-  
-  loadMockData: () => set({
-    animals: mockAnimals,
-    gateway: mockGateway,
-    safeZone: mockSafeZone,
-  }),
+      selectAnimal: (animal) => set({ selectedAnimal: animal }),
 
-  connectMQTT: () => {
-    // We import the service here to avoid circular dependencies if any
-    const { connectMQTT } = require('../services/mqtt');
-    connectMQTT();
-  },
+      updateAnimal: (id, updates) => set((state) => ({
+        animals: state.animals.map((a) =>
+          a.id === id ? { ...a, ...updates } : a
+        ),
+      })),
 
-  disconnectMQTT: () => {
-    const { disconnectMQTT } = require('../services/mqtt');
-    disconnectMQTT();
-  },
-}));
+      setGateway: (gateway) => set({ gateway }),
+
+      updateSafeZone: (safeZone) => set({ safeZone }),
+
+      toggleLockdown: () => set((state) => ({ isLockdownMode: !state.isLockdownMode })),
+
+      toggleHeatmap: () => set((state) => ({ showHeatmap: !state.showHeatmap })),
+
+      triggerBuzzer: (animalId) => {
+        const animal = get().animals.find(a => a.id === animalId);
+        if (!animal) return;
+
+        const newStatus = !animal.buzzerEnabled;
+
+        // Update local state
+        set((state) => ({
+          animals: state.animals.map(a =>
+            a.id === animalId ? { ...a, buzzerEnabled: newStatus } : a
+          )
+        }));
+
+        // Send hardware command
+        const { sendBuzzerDownlink } = require('../services/mqtt');
+        sendBuzzerDownlink(animal.tagId, newStatus);
+      },
+
+      loadMockData: () => set({
+        animals: mockAnimals,
+        gateway: mockGateway,
+        safeZone: mockSafeZone,
+      }),
+
+      connectMQTT: () => {
+        // We import the service here to avoid circular dependencies if any
+        const { connectMQTT } = require('../services/mqtt');
+        connectMQTT();
+      },
+
+      disconnectMQTT: () => {
+        const { disconnectMQTT } = require('../services/mqtt');
+        disconnectMQTT();
+      },
+    }),
+    {
+      name: 'herdfinder-animal-storage', // unique name
+      storage: createJSONStorage(() => AsyncStorage),
+      partialize: (state) => ({ animals: state.animals, safeZone: state.safeZone }), // only persist these parts of the state
+    }
+  )
+);

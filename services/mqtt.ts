@@ -22,11 +22,12 @@
  *   battery = bytes[2] / 10                          // e.g., 4.2V
  */
 
-import { useAnimalStore } from '../store/animalStore';
-import { useAlertStore } from '../store/alertStore';
-import { TTNUplink, Alert } from '../types';
-import mqtt, { MqttClient } from 'mqtt';
 import { Buffer } from 'buffer';
+import mqtt, { MqttClient } from 'mqtt';
+import { useAlertStore } from '../store/alertStore';
+import { useAnimalStore } from '../store/animalStore';
+import { TTNUplink } from '../types';
+import { calculateDistance } from '@/store/geo';
 
 // Polyfill Buffer for MQTT library
 if (typeof global.Buffer === 'undefined') {
@@ -80,11 +81,11 @@ export function processUplink(payload: TTNUplink): void {
   const deviceId = payload.end_device_ids.device_id;
   const decoded = payload.uplink_message.decoded_payload;
   const rssi = payload.uplink_message.rx_metadata?.[0]?.rssi;
-  
+
   // Update animal in store
   const store = useAnimalStore.getState();
   const animal = store.animals.find((a) => a.tagId === deviceId);
-  
+
   if (animal) {
     const isMoving = decoded.motion !== undefined ? decoded.motion : true;
     const status = isMoving ? 'Moving' : 'Stationary';
@@ -95,7 +96,7 @@ export function processUplink(payload: TTNUplink): void {
     // Calculate new distance from home (gateway)
     const gateway = store.gateway;
     const newDist = calculateDistance(
-      newLat, newLng, 
+      newLat, newLng,
       gateway.location.latitude, gateway.location.longitude
     );
 
@@ -112,7 +113,7 @@ export function processUplink(payload: TTNUplink): void {
       prevDistanceFromHome: animal.distanceFromHome,
       distanceFromHome: newDist,
     });
-    
+
     // Check alert rules
     checkAlertRules(animal.id, animal.name, decoded.temperature, decoded.battery, status, lastMovedAt, animal, newDist);
 
@@ -130,23 +131,23 @@ export function processUplink(payload: TTNUplink): void {
  */
 function checkSocialIsolation(animal: any, allAnimals: any[]) {
   const alertStore = useAlertStore.getState();
-  
+
   // Find other cattle in the same herd
-  const peers = allAnimals.filter(a => 
-    a.id !== animal.id && 
-    a.category === 'cattle' && 
+  const peers = allAnimals.filter(a =>
+    a.id !== animal.id &&
+    a.category === 'cattle' &&
     a.herdName === animal.herdName
   );
-  
+
   if (peers.length === 0) return;
-  
+
   // Find distance to the NEAREST peer
   let minDistance = Infinity;
   peers.forEach(peer => {
     const dist = calculateDistance(animal.latitude, animal.longitude, peer.latitude, peer.longitude);
     if (dist < minDistance) minDistance = dist;
   });
-  
+
   // If nearest peer is > 200m (0.2km) away
   if (minDistance > 0.2) {
     alertStore.addAlert({
@@ -168,28 +169,28 @@ function checkSocialIsolation(animal: any, allAnimals: any[]) {
  */
 function checkHealthDeviations(animal: any, currentTemp: number) {
   const alertStore = useAlertStore.getState();
-  
+
   // 1. Calculate Average Temperature (from 24h history)
   if (!animal.temperatureHistory || animal.temperatureHistory.length < 5) return;
-  
+
   const avgTemp = animal.temperatureHistory.reduce((sum: number, r: any) => sum + r.temperature, 0) / animal.temperatureHistory.length;
-  
+
   // 2. Calculate Movement Intensity (total distance traveled in history)
   if (!animal.positionHistory || animal.positionHistory.length < 10) return;
-  
+
   let totalDistance = 0;
   for (let i = 1; i < animal.positionHistory.length; i++) {
-    const p1 = animal.positionHistory[i-1];
+    const p1 = animal.positionHistory[i - 1];
     const p2 = animal.positionHistory[i];
     totalDistance += calculateDistance(p1.latitude, p1.longitude, p2.latitude, p2.longitude);
   }
-  
+
   // We assume the average movement intensity for a healthy cow is ~2km/day in our mock data
   // In a real system, we would calculate this over 7 days.
-  const baselineMovement = 2.0; 
+  const baselineMovement = 2.0;
   const movementDrop = totalDistance < (baselineMovement * 0.6); // 40% less than baseline
   const tempSpike = currentTemp > (avgTemp + 1.0); // 1°C above average
-  
+
   if (tempSpike && movementDrop) {
     alertStore.addAlert({
       id: `alert-health-${animal.id}-${Date.now()}`,
@@ -202,21 +203,6 @@ function checkHealthDeviations(animal: any, currentTemp: number) {
       createdAt: new Date(),
     });
   }
-}
-
-/**
- * Helper to calculate distance between two coordinates in km
- */
-function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
-  const R = 6371; // Radius of the earth in km
-  const dLat = (lat2 - lat1) * Math.PI / 180;
-  const dLon = (lon2 - lon1) * Math.PI / 180;
-  const a = 
-    Math.sin(dLat/2) * Math.sin(dLat/2) +
-    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
-    Math.sin(dLon/2) * Math.sin(dLon/2);
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-  return R * c;
 }
 
 /**
@@ -233,7 +219,7 @@ function checkAlertRules(
   currentDist: number
 ): void {
   const alertStore = useAlertStore.getState();
-  
+
   if (temperature > ALERT_THRESHOLDS.HIGH_TEMP) {
     alertStore.addAlert({
       id: `alert-${Date.now()}`,
@@ -248,7 +234,7 @@ function checkAlertRules(
     // TODO: HARDWARE INTEGRATION - Send push notification via Expo
     // TODO: HARDWARE INTEGRATION - Send SMS via backend API
   }
-  
+
   if (battery < ALERT_THRESHOLDS.LOW_BATTERY) {
     alertStore.addAlert({
       id: `alert-bat-${animalId}-${Date.now()}`,
@@ -282,20 +268,20 @@ function checkAlertRules(
   // Theft Detection (Cattle moving fast away from home > 3km)
   if (animal.category === 'cattle' && currentDist > ALERT_THRESHOLDS.THEFT_DISTANCE) {
     const isMovingAway = animal.prevDistanceFromHome ? currentDist > animal.prevDistanceFromHome : false;
-    
+
     // If moving away rapidly (e.g., speed > 5km/h for cattle is suspicious, usually they graze slowly)
     // Or just moving away while already 3km+ out
     if (isMovingAway && status === 'Moving') {
-       alertStore.addAlert({
-         id: `alert-theft-${animalId}-${Date.now()}`,
-         animalId,
-         animalName,
-         type: 'THEFT_ALERT',
-         message: `POTENTIAL THEFT: ${animalName} is ${currentDist.toFixed(1)}km from home and moving further away rapidly.`,
-         severity: 'critical',
-         read: false,
-         createdAt: new Date(),
-       });
+      alertStore.addAlert({
+        id: `alert-theft-${animalId}-${Date.now()}`,
+        animalId,
+        animalName,
+        type: 'THEFT_ALERT',
+        message: `POTENTIAL THEFT: ${animalName} is ${currentDist.toFixed(1)}km from home and moving further away rapidly.`,
+        severity: 'critical',
+        read: false,
+        createdAt: new Date(),
+      });
     }
   }
 
@@ -345,7 +331,7 @@ export function connectMQTT(): void {
           console.log('Subscribed to topic:', MQTT_CONFIG.topic);
         }
       });
-      
+
       // Update gateway status in store
       useAnimalStore.getState().setGateway({
         ...useAnimalStore.getState().gateway,
@@ -401,7 +387,7 @@ export const sendBuzzerDownlink = (deviceId: string, enabled: boolean) => {
   }
 
   const topic = `v3/${MQTT_CONFIG.appId}@ttn/devices/${deviceId}/down/push`;
-  
+
   const payload = {
     downlinks: [{
       f_port: 2,
