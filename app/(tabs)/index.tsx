@@ -13,7 +13,7 @@
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { useRouter } from 'expo-router';
 import React, { useCallback, useState } from 'react';
-import { Alert, StyleSheet, Text, TouchableOpacity, View, ScrollView, ActivityIndicator } from 'react-native';
+import { Alert, StyleSheet, Text, TouchableOpacity, View, ScrollView, ActivityIndicator, Modal } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import AnimalDetailCard from '../../components/AnimalDetailCard';
@@ -43,6 +43,13 @@ export default function MapScreen() {
   const [filter, setFilter] = useState<string | null>(null);
   const [isSyncing, setIsSyncing] = useState(false);
   const [syncProgress, setSyncProgress] = useState(0);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+
+  const handleLogout = () => {
+    setIsMenuOpen(false);
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    router.replace('/auth/login');
+  };
 
   const handleSyncHerd = async () => {
     setIsSyncing(true);
@@ -97,7 +104,7 @@ export default function MapScreen() {
           style={styles.headerBtn}
           onPress={() => {
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-            Alert.alert('Menu', 'Settings and Profile options coming soon!');
+            setIsMenuOpen(true);
           }}
         >
           <FontAwesome name="navicon" size={18} color={Colors.textPrimary} />
@@ -138,6 +145,48 @@ export default function MapScreen() {
             )}
           </TouchableOpacity>
         </View>
+
+      {/* SIDE MENU MODAL */}
+      <Modal
+        visible={isMenuOpen}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setIsMenuOpen(false)}
+      >
+        <View style={styles.menuOverlay}>
+          <View style={styles.menuContainer}>
+            <View style={styles.menuHeader}>
+              <Text style={styles.menuTitle}>HerdFinder</Text>
+              <TouchableOpacity onPress={() => setIsMenuOpen(false)}>
+                <FontAwesome name="times" size={20} color={Colors.textMuted} />
+              </TouchableOpacity>
+            </View>
+            
+            <TouchableOpacity style={styles.menuItem} onPress={() => { setIsMenuOpen(false); router.push('/(tabs)/more'); }}>
+              <FontAwesome name="user" size={18} color={Colors.textPrimary} style={styles.menuIcon} />
+              <Text style={styles.menuItemText}>Account</Text>
+            </TouchableOpacity>
+            
+            <TouchableOpacity style={styles.menuItem} onPress={() => { setIsMenuOpen(false); router.push('/(tabs)/more'); }}>
+              <FontAwesome name="cog" size={18} color={Colors.textPrimary} style={styles.menuIcon} />
+              <Text style={styles.menuItemText}>Settings</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity style={styles.menuItem} onPress={() => { setIsMenuOpen(false); router.push('/more/help'); }}>
+              <FontAwesome name="question-circle" size={18} color={Colors.textPrimary} style={styles.menuIcon} />
+              <Text style={styles.menuItemText}>Help</Text>
+            </TouchableOpacity>
+
+            <View style={styles.menuDivider} />
+
+            <TouchableOpacity style={styles.menuItem} onPress={handleLogout}>
+              <FontAwesome name="sign-out" size={18} color={Colors.danger} style={styles.menuIcon} />
+              <Text style={[styles.menuItemText, { color: Colors.danger }]}>Logout</Text>
+            </TouchableOpacity>
+          </View>
+          <TouchableOpacity style={styles.menuCloseArea} onPress={() => setIsMenuOpen(false)} activeOpacity={1} />
+        </View>
+      </Modal>
       </View>
 
       <View style={{ zIndex: 10, paddingHorizontal: 0 }}>
@@ -262,4 +311,58 @@ const styles = StyleSheet.create({
   },
   statValue: { color: Colors.textPrimary, fontSize: 16, fontWeight: 'bold' },
   statLabel: { color: Colors.textSecondary, fontSize: 9, fontWeight: '600' },
+  menuOverlay: {
+    flex: 1,
+    flexDirection: 'row',
+    backgroundColor: 'rgba(0,0,0,0.5)',
+  },
+  menuCloseArea: {
+    flex: 1,
+  },
+  menuContainer: {
+    width: 250,
+    backgroundColor: Colors.background,
+    height: '100%',
+    paddingTop: 50,
+    paddingHorizontal: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 5, height: 0 },
+    shadowOpacity: 0.5,
+    shadowRadius: 10,
+    elevation: 20,
+  },
+  menuHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 30,
+    paddingBottom: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.border,
+  },
+  menuTitle: {
+    color: Colors.primary,
+    fontSize: 20,
+    fontWeight: 'bold',
+  },
+  menuItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 16,
+  },
+  menuIcon: {
+    width: 24,
+    marginRight: 12,
+    textAlign: 'center',
+  },
+  menuItemText: {
+    color: Colors.textPrimary,
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  menuDivider: {
+    height: 1,
+    backgroundColor: Colors.border,
+    marginVertical: 10,
+  },
 });

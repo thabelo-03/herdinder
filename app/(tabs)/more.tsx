@@ -14,7 +14,7 @@ import {
   Linking,
 } from 'react-native';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import Colors from '../../constants/Colors';
 import { useAuthStore } from '../../store/authStore';
 import { useAnimalStore } from '../../store/animalStore';
@@ -50,6 +50,7 @@ function MenuItem({ icon, label, subtitle, color = Colors.textPrimary, onPress, 
 
 export default function MoreScreen() {
   const router = useRouter();
+  const { filter } = useLocalSearchParams<{ filter?: string }>();
   const user = useAuthStore((s) => s.user);
   const gateway = useAnimalStore((s) => s.gateway);
   const animals = useAnimalStore((s) => s.animals);
@@ -58,15 +59,22 @@ export default function MoreScreen() {
     Linking.openURL('https://wa.me/263777926123');
   };
 
+  const showAccount = !filter || filter === 'account';
+  const showSettings = !filter || filter === 'settings';
+
   return (
     <SafeAreaView style={styles.screen}>
       <ScrollView showsVerticalScrollIndicator={false}>
         {/* Header */}
         <View style={styles.header}>
-          <Text style={styles.headerTitle}>More</Text>
+          <Text style={styles.headerTitle}>
+            {filter === 'account' ? 'Account' : filter === 'settings' ? 'Settings' : 'More'}
+          </Text>
         </View>
 
-        {/* Profile Card */}
+        {showAccount && (
+          <>
+            {/* Profile Card */}
         <View style={styles.profileCard}>
           <View style={styles.profileAvatar}>
             <FontAwesome name="user" size={28} color={Colors.primary} />
@@ -94,12 +102,16 @@ export default function MoreScreen() {
               R{(animals.length * 100).toFixed(2)}/mo
             </Text>
           </View>
-          <TouchableOpacity style={styles.upgradeBtn} onPress={() => router.push('/more/subscription')}>
-            <Text style={styles.upgradeBtnText}>Buy More Devices</Text>
-          </TouchableOpacity>
-        </View>
+            <TouchableOpacity style={styles.upgradeBtn} onPress={() => router.push('/more/subscription')}>
+              <Text style={styles.upgradeBtnText}>Buy More Devices</Text>
+            </TouchableOpacity>
+          </View>
+          </>
+        )}
 
-        {/* Menu Sections */}
+        {showSettings && (
+          <>
+            {/* Menu Sections */}
         <Text style={styles.sectionTitle}>ASSETS & TRACKING</Text>
         <View style={styles.menuGroup}>
           <MenuItem icon="map" label="Safe Zone Editor" subtitle="Draw boundaries for alerts" color={Colors.primary} onPress={() => router.push('/more/safe-zone')} />
@@ -148,6 +160,8 @@ export default function MoreScreen() {
             <Text style={styles.promoSub}>Buy 4 or more trackers for only R800 each!</Text>
           </View>
         </View>
+        </>
+        )}
 
         <View style={{ height: 40 }} />
       </ScrollView>
