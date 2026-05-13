@@ -9,7 +9,7 @@ mongoose.connect(process.env.MONGODB_URI, {
 })
 .then(() => {
   console.log('✅ Simulation: Connected to MongoDB Atlas');
-  console.log('🚀 Starting simulation... (sending data every 5 seconds)');
+  console.log('🚀 Starting simulation... (sending data every 1 hour)');
   startSimulating();
 })
 .catch(err => console.error('❌ MongoDB Connection Error:', err));
