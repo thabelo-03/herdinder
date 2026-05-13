@@ -1,7 +1,8 @@
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { Tabs } from 'expo-router';
 import React, { useEffect, useRef } from 'react';
-import { Animated, StyleSheet, Text, View } from 'react-native';
+import { Animated, StyleSheet, Text, View, SafeAreaView } from 'react-native';
+import GlobalSearch from '../../components/GlobalSearch';
 import Colors from '../../constants/Colors';
 import { useAlertStore } from '../../store/alertStore';
 import { useAnimalStore } from '../../store/animalStore';
@@ -62,8 +63,6 @@ function AlertBadge({ types }: { types?: AlertType[] }) {
   );
 }
 
-import GlobalSearch from '../../components/GlobalSearch';
-import { SafeAreaView } from 'react-native';
 
 export default function TabLayout() {
   const connectMQTT = useAnimalStore((s) => s.connectMQTT);

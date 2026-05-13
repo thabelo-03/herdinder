@@ -15,6 +15,7 @@ export default function SignupScreen() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+  const [successMsg, setSuccessMsg] = useState('');
 
   // 10.0.2.2 is for Android Emulator. localhost is for Web.
   const API_URL = Platform.OS === 'web' 
@@ -38,6 +39,7 @@ export default function SignupScreen() {
     }
 
     setError('');
+    setSuccessMsg('');
     setIsLoading(true);
 
     try {
@@ -53,8 +55,11 @@ export default function SignupScreen() {
         throw new Error(data.message || 'Registration failed');
       }
 
-      // Success!
-      router.replace('/(tabs)');
+      // Success! Show message and navigate to login after a delay
+      setSuccessMsg('Account created successfully! Redirecting to login...');
+      setTimeout(() => {
+        router.replace('/auth/login');
+      }, 2000);
     } catch (err: any) {
       setError(err.message || 'Network error. Make sure your server is running.');
     } finally {
@@ -79,6 +84,7 @@ export default function SignupScreen() {
 
           <BlurView intensity={20} tint="dark" style={styles.formCard}>
             {error ? <View style={styles.errorContainer}><FontAwesome name="exclamation-circle" size={14} color={Colors.danger} /><Text style={styles.errorText}>{error}</Text></View> : null}
+            {successMsg ? <View style={styles.successContainer}><FontAwesome name="check-circle" size={14} color="#34C759" /><Text style={styles.successText}>{successMsg}</Text></View> : null}
 
             <View style={styles.inputGroup}>
               <FontAwesome name="user" size={16} color={Colors.textMuted} style={styles.inputIcon} />
@@ -227,4 +233,16 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   errorText: { color: Colors.danger, fontSize: 13, flex: 1 },
+  successContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(52, 199, 89, 0.1)',
+    padding: 12,
+    borderRadius: 10,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(52, 199, 89, 0.3)',
+    gap: 8,
+  },
+  successText: { color: '#34C759', fontSize: 13, flex: 1 },
 });
