@@ -13,6 +13,7 @@ import Colors from '../../constants/Colors';
 import { useAlertStore } from '../../store/alertStore';
 import { AlertType } from '../../types';
 import AlertItem from '../../components/AlertItem';
+import GlobalSearch from '../../components/GlobalSearch';
 
 const FILTER_OPTIONS: { label: string; value: AlertType | 'ALL' }[] = [
   { label: 'All', value: 'ALL' },
@@ -62,6 +63,10 @@ export default function AlertsScreen() {
             <Text style={styles.markAllText}>Mark all read</Text>
           </TouchableOpacity>
         )}
+      </View>
+
+      <View style={{ marginBottom: 10, zIndex: 10 }}>
+        <GlobalSearch />
       </View>
 
       {/* Alert Category Summary */}

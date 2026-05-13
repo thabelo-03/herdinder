@@ -23,6 +23,7 @@ import Colors from '../../constants/Colors';
 import { useAnimalStore } from '../../store/animalStore';
 import { Animal } from '../../types';
 import { StorageManager } from '../../services/storageManager';
+import GlobalSearch from '../../components/GlobalSearch';
 // Metro automatically picks HerdMapView.native.tsx on device and HerdMapView.web.tsx on browser
 import HerdMapView from '../../components/HerdMapView';
 
@@ -139,7 +140,11 @@ export default function MapScreen() {
         </View>
       </View>
 
-      {/* Gateway Banner */}
+      <View style={{ zIndex: 10, paddingHorizontal: 0 }}>
+        <GlobalSearch />
+      </View>
+
+      {/* Floating Filters */}
       <GatewayBanner gateway={gateway} />
 
       {/* Map — platform-specific (native or web) */}

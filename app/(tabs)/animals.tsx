@@ -18,6 +18,7 @@ import {
 import * as Haptics from 'expo-haptics';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import BreathingDot from '../../components/BreathingDot';
+import GlobalSearch from '../../components/GlobalSearch';
 import Colors, { getCategoryColor, getCategoryIcon, getTempColor } from '../../constants/Colors';
 import { useAnimalStore } from '../../store/animalStore';
 import { Animal, AssetCategory } from '../../types';
@@ -156,6 +157,10 @@ export default function AnimalsScreen() {
         >
           <FontAwesome name={sortBy === 'recent' ? 'clock-o' : sortBy === 'battery' ? 'bolt' : 'sort-alpha-asc'} size={18} color={Colors.primary} />
         </TouchableOpacity>
+      </View>
+
+      <View style={{ marginBottom: 10, zIndex: 10 }}>
+        <GlobalSearch />
       </View>
 
       {/* Category Filter Tabs */}

@@ -75,10 +75,8 @@ export default function TabLayout() {
   }, [connectMQTT, disconnectMQTT]);
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: Colors.background }}>
-      <GlobalSearch />
-      <Tabs
-        screenOptions={{
+    <Tabs
+      screenOptions={{
         tabBarActiveTintColor: Colors.tabBarActive,
         tabBarInactiveTintColor: Colors.tabBarInactive,
         tabBarStyle: {
@@ -155,7 +153,6 @@ export default function TabLayout() {
         }}
       />
     </Tabs>
-    </SafeAreaView>
   );
 }
 
