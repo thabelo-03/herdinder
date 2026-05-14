@@ -4,7 +4,7 @@
  * TODO: HARDWARE INTEGRATION - Replace with real MQTT data from TTN
  */
 
-import { Alert, Animal, Gateway, SafeZone, TempReading } from '../types';
+import { Alert, Animal, Gateway, SafeZone, TempReading, WaterSource } from '../types';
 
 // Generate 24h temperature history
 function generateTempHistory(baseTemp: number): TempReading[] {
@@ -467,6 +467,30 @@ export const mockSafeZone: SafeZone = {
   name: 'SAFE ZONE',
   coordinates: generateCirclePolygon(BASE_LAT, BASE_LNG, 10, 32),
 };
+
+export const mockWaterSources: WaterSource[] = [
+  {
+    id: 'ws-001',
+    name: 'River Bend',
+    latitude: BASE_LAT + 0.015,
+    longitude: BASE_LNG - 0.01,
+    radiusMeters: 50,
+  },
+  {
+    id: 'ws-002',
+    name: 'Northern Trough',
+    latitude: BASE_LAT - 0.02,
+    longitude: BASE_LNG + 0.015,
+    radiusMeters: 30,
+  },
+  {
+    id: 'ws-003',
+    name: 'Western Pan',
+    latitude: BASE_LAT + 0.005,
+    longitude: BASE_LNG - 0.025,
+    radiusMeters: 40,
+  }
+];
 
 const getRandomLocationInRadius = (centerLat: number, centerLng: number, radiusKm: number) => {
   const angle = Math.random() * Math.PI * 2;

@@ -33,6 +33,7 @@ export default function MapScreen() {
   const animals = useAnimalStore((s) => s.animals);
   const gateway = useAnimalStore((s) => s.gateway);
   const safeZone = useAnimalStore((s) => s.safeZone);
+  const waterSources = useAnimalStore((s) => s.waterSources);
   const selectedAnimal = useAnimalStore((s) => s.selectedAnimal);
   const selectAnimal = useAnimalStore((s) => s.selectAnimal);
   const isLockdownMode = useAnimalStore((s) => s.isLockdownMode);
@@ -217,6 +218,7 @@ export default function MapScreen() {
         <HerdMapView
           animals={filteredAnimals}
           safeZone={safeZone}
+          waterSources={waterSources}
           selectedAnimal={selectedAnimal}
           onMarkerPress={(a) => {
             Haptics.selectionAsync();

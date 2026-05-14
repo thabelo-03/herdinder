@@ -103,6 +103,14 @@ export interface SafeZone {
   coordinates: { latitude: number; longitude: number }[];
 }
 
+export interface WaterSource {
+  id: string;
+  name: string;
+  latitude: number;
+  longitude: number;
+  radiusMeters: number; // The effective coverage area of the water source
+}
+
 // ==================== SUBSCRIPTION ====================
 
 export interface Subscription {

@@ -109,12 +109,12 @@ export default function GlobalSearch() {
           ) : (
             <>
               {results.assets.length > 0 && <Text style={styles.sectionTitle}>ASSETS</Text>}
-              <FlatList
-                data={results.assets}
-                keyExtractor={(item) => item._id || item.tagId}
-                keyboardShouldPersistTaps="handled"
-                renderItem={({ item }) => (
-                  <TouchableOpacity style={styles.resultItem} onPress={() => handleResultPress(item.tagId)}>
+                <FlatList
+                  data={results.assets}
+                  keyExtractor={(item) => item._id || item.id || item.tagId}
+                  keyboardShouldPersistTaps="handled"
+                  renderItem={({ item }) => (
+                    <TouchableOpacity style={styles.resultItem} onPress={() => handleResultPress(item.id || item._id)}>
                     <View style={styles.resultIcon}>
                       <FontAwesome name={item.category === 'vehicle' ? 'truck' : 'paw'} size={14} color={Colors.background} />
                     </View>

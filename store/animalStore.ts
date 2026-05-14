@@ -8,14 +8,15 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { create } from 'zustand'; // Import create from zustand
 import { createJSONStorage, persist } from 'zustand/middleware'; // Import persist and createJSONStorage
-import { mockAnimals, mockGateway, mockSafeZone } from '../data/mockData';
-import { Animal, Gateway, SafeZone } from '../types';
+import { mockAnimals, mockGateway, mockSafeZone, mockWaterSources } from '../data/mockData';
+import { Animal, Gateway, SafeZone, WaterSource } from '../types';
 
 interface AnimalState {
   animals: Animal[];
   selectedAnimal: Animal | null;
   gateway: Gateway;
   safeZone: SafeZone;
+  waterSources: WaterSource[];
   isLoading: boolean;
   isLockdownMode: boolean;
   showHeatmap: boolean;
@@ -54,6 +55,7 @@ export const useAnimalStore = create<AnimalState>()(
       selectedAnimal: null,
       gateway: mockGateway,
       safeZone: mockSafeZone,
+      waterSources: mockWaterSources,
       isLoading: false,
       isLockdownMode: false,
       showHeatmap: false,
@@ -100,6 +102,7 @@ export const useAnimalStore = create<AnimalState>()(
         animals: mockAnimals,
         gateway: mockGateway,
         safeZone: mockSafeZone,
+        waterSources: mockWaterSources,
       }),
 
       connectMQTT: () => {

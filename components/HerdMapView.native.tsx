@@ -1,15 +1,17 @@
 import { FontAwesome } from '@expo/vector-icons';
 import React, { useCallback, useRef, useState } from 'react';
 import { Alert, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import MapView, { Heatmap, LatLng, Marker, Polygon, Region } from 'react-native-maps';
+import MapView, { Heatmap, LatLng, Marker, Polygon, Region, Circle } from 'react-native-maps';
 import Colors, { getCategoryColor, getCategoryIcon, getTempColor } from '../constants/Colors';
 import { MAX_OFFLINE_TILES, StorageManager, TILE_CACHE_DIR } from '../services/storageManager';
-import { Animal, SafeZone } from '../types';
+import { Animal, SafeZone, WaterSource } from '../types';
+import { calculateDistanceMeters } from '../utils/distance';
 import HFMapOfflineOverlay from './OfflineTileOverlay';
 
 interface Props {
   animals: Animal[];
   safeZone: SafeZone;
+  waterSources?: WaterSource[];
   selectedAnimal: Animal | null;
   onMarkerPress: (animal: Animal) => void;
   isPreview?: boolean;
@@ -33,6 +35,7 @@ const INITIAL_REGION = { latitude: BASE_LAT, longitude: BASE_LNG, latitudeDelta:
 export default function HerdMapView({
   animals,
   safeZone,
+  waterSources = [],
   selectedAnimal,
   onMarkerPress,
   isPreview = false,
@@ -303,6 +306,19 @@ export default function HerdMapView({
 
         <Polygon coordinates={safeZone.coordinates} strokeColor={Colors.safeZoneBorder} strokeWidth={2} fillColor={Colors.safeZoneFill} lineDashPattern={[8, 6]} />
 
+        {/* Water Sources */}
+        {waterSources.map((ws) => (
+          <Circle
+            key={ws.id}
+            center={{ latitude: ws.latitude, longitude: ws.longitude }}
+            radius={ws.radiusMeters}
+            fillColor="rgba(77, 171, 247, 0.4)"
+            strokeColor="rgba(77, 171, 247, 0.8)"
+            strokeWidth={1}
+            zIndex={2}
+          />
+        ))}
+
         {animals.map((animal: Animal) => {
           const isCattle = animal.category === 'cattle';
           const categoryColor = getCategoryColor(animal.category);
@@ -311,10 +327,20 @@ export default function HerdMapView({
           const pinColor = isCattle ? getTempColor(animal.temperature) : categoryColor;
           const isSelected = selectedAnimal?.id === animal.id;
 
+          // Check proximity to water sources
+          const isNearWater = waterSources.some(ws => {
+            const distance = calculateDistanceMeters(animal.latitude, animal.longitude, ws.latitude, ws.longitude);
+            return distance <= ws.radiusMeters;
+          });
+
           // Status text for vehicles
-          const statusLabel = !isCattle
+          let statusLabel = !isCattle
             ? (animal.speed && animal.speed > 0 ? `${animal.speed} km/h` : animal.status)
             : `${animal.temperature}°C`;
+
+          if (isCattle && isNearWater) {
+             statusLabel += ' • Drinking';
+          }
 
           return (
             <Marker
@@ -325,32 +351,33 @@ export default function HerdMapView({
               tracksViewChanges={true}
               zIndex={10}
             >
-              <View style={styles.markerWrapper}>
-                {/* Main Label Bubble */}
-                <View style={[
-                  styles.markerBubble,
-                  isSelected && { borderColor: Colors.primary, borderWidth: 2.5 }
-                ]}>
-                  <View style={styles.markerHeader}>
-                    <View style={[styles.categoryBadge, { backgroundColor: pinColor }]}>
-                      <FontAwesome name={iconName} size={10} color="#000" />
+              <View style={styles.markerWrapper} collapsable={false}>
+                <View
+                  style={[
+                    styles.markerBubble,
+                    isSelected && { borderColor: Colors.primary, borderWidth: 2 },
+                  ]}
+                  collapsable={false}
+                >
+                  {/* Icon + Name row */}
+                  <View style={styles.markerHeader} collapsable={false}>
+                    <View style={[styles.categoryBadge, { backgroundColor: pinColor }]} collapsable={false}>
+                      <FontAwesome name={iconName} size={9} color="#FFF" />
                     </View>
-                    <Text style={styles.markerNameText} numberOfLines={1}>{animal.name}</Text>
+                    <Text style={styles.markerNameText} numberOfLines={1} ellipsizeMode="tail">{animal.name}</Text>
                   </View>
-
-                  <Text style={styles.markerIdText}>{animal.tagId}</Text>
-
-                  <View style={styles.markerFooter}>
-                    <Text style={[styles.markerTempText, { color: getTempColor(animal.temperature) }]}>
-                      {animal.temperature}°C
-                    </Text>
-                    <Text style={styles.markerStatusText}>• {animal.status}</Text>
+                  {/* Status row */}
+                  <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                    <Text style={[styles.markerStatusText, { color: pinColor }]} numberOfLines={1}>{statusLabel}</Text>
+                    {isCattle && isNearWater && (
+                      <FontAwesome name="tint" size={10} color="#4DABF7" style={{ marginLeft: 6 }} />
+                    )}
                   </View>
                 </View>
-
-                {/* Indicator Pin */}
-                <View style={[styles.markerPin, { backgroundColor: pinColor }]} />
-                <View style={styles.markerPointer} />
+                {/* Static status dot indicator */}
+                <View style={[styles.statusDotOuter, { borderColor: pinColor }]} collapsable={false}>
+                  <View style={[styles.statusDotInner, { backgroundColor: pinColor }]} />
+                </View>
               </View>
             </Marker>
           );
@@ -419,43 +446,34 @@ export default function HerdMapView({
 const styles = StyleSheet.create({
   container: { flex: 1 },
   map: { flex: 1 },
-  markerWrapper: { alignItems: 'center', paddingBottom: 5 },
+  // Marker styles — NO elevation/shadow props to prevent Android hardware bitmap crash
+  markerWrapper: { alignItems: 'center', width: 100, height: 65, justifyContent: 'flex-start' },
   markerBubble: {
-    backgroundColor: '#FFF',
-    borderRadius: 12,
-    paddingHorizontal: 10,
-    paddingVertical: 8,
-    minWidth: 100,
+    width: 100,
+    backgroundColor: '#15151E',
+    borderRadius: 8,
+    paddingHorizontal: 7,
+    paddingVertical: 5,
     borderWidth: 1,
-    borderColor: '#E0E0E0',
-    elevation: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.4,
-    shadowRadius: 8,
+    borderColor: 'rgba(255,255,255,0.15)',
+    // No elevation, no shadow — these cause hardware bitmap crashes on Android
   },
-  markerHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 4 },
+  markerHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 2 },
   categoryBadge: {
-    width: 18, height: 18, borderRadius: 9,
+    width: 16, height: 16, borderRadius: 8,
     justifyContent: 'center', alignItems: 'center',
-    marginRight: 6,
+    marginRight: 4, flexShrink: 0,
   },
-  markerIdText: { color: '#666', fontSize: 10, fontWeight: '700' },
-  markerNameText: { color: '#1A1A2E', fontSize: 15, fontWeight: '900', marginBottom: 2 },
-  markerFooter: { flexDirection: 'row', alignItems: 'center' },
-  markerTempText: { fontSize: 14, fontWeight: '900' },
-  markerStatusText: { color: '#888', fontSize: 11, fontWeight: '600', marginLeft: 6 },
-  markerPin: {
-    width: 12, height: 12, borderRadius: 6,
-    borderWidth: 2, borderColor: '#FFF',
-    marginTop: -6, elevation: 14,
+  markerNameText: { color: '#FFFFFF', fontSize: 11, fontWeight: '800', flex: 1 },
+  markerStatusText: { fontSize: 10, fontWeight: '700', marginLeft: 20 },
+  statusDotOuter: {
+    marginTop: 3,
+    width: 14, height: 14, borderRadius: 7,
+    borderWidth: 2, backgroundColor: 'transparent',
+    alignItems: 'center', justifyContent: 'center',
   },
-  markerPointer: {
-    width: 0, height: 0,
-    borderLeftWidth: 6, borderRightWidth: 6, borderTopWidth: 8,
-    borderLeftColor: 'transparent', borderRightColor: 'transparent',
-    borderTopColor: '#FFF',
-    marginTop: -1,
+  statusDotInner: {
+    width: 6, height: 6, borderRadius: 3,
   },
   controls: { position: 'absolute', right: 12, top: '28%', gap: 10 },
   controlBtn: {
