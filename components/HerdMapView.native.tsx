@@ -1,6 +1,6 @@
 import { FontAwesome } from '@expo/vector-icons';
 import React, { useCallback, useRef, useState } from 'react';
-import { Alert, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Alert, StyleSheet, Text, TouchableOpacity, View, Platform } from 'react-native';
 import MapView, { Heatmap, LatLng, Marker, Polygon, Region, Circle } from 'react-native-maps';
 import Colors, { getCategoryColor, getCategoryIcon, getTempColor } from '../constants/Colors';
 import { MAX_OFFLINE_TILES, StorageManager, TILE_CACHE_DIR } from '../services/storageManager';
@@ -446,17 +446,27 @@ export default function HerdMapView({
 const styles = StyleSheet.create({
   container: { flex: 1 },
   map: { flex: 1 },
-  // Marker styles — NO elevation/shadow props to prevent Android hardware bitmap crash
-  markerWrapper: { alignItems: 'center', width: 100, height: 65, justifyContent: 'flex-start' },
+  // Marker styles — NO elevation/shadow props on Android to prevent hardware bitmap crash
+  markerWrapper: { alignItems: 'center', width: 115, height: 65, justifyContent: 'flex-start' },
   markerBubble: {
-    width: 100,
+    width: 115,
     backgroundColor: '#15151E',
     borderRadius: 8,
     paddingHorizontal: 7,
     paddingVertical: 5,
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.15)',
-    // No elevation, no shadow — these cause hardware bitmap crashes on Android
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 6 },
+        shadowOpacity: 0.5,
+        shadowRadius: 8,
+      },
+      android: {
+        // No elevation, no shadow — these cause hardware bitmap crashes on Android
+      }
+    })
   },
   markerHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 2 },
   categoryBadge: {
