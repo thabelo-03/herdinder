@@ -14,10 +14,10 @@ export default function LoginScreen() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
 
-  // 10.0.2.2 is for Android Emulator. localhost is for Web.
-  const API_URL = Platform.OS === 'web' 
-    ? 'http://localhost:5000/api/auth' 
-    : 'http://10.0.2.2:5000/api/auth';
+  // localhost = web, 10.0.2.2 = Android Emulator, LAN IP = physical Android device
+  const API_URL = Platform.OS === 'web'
+    ? 'http://localhost:5000/api/auth'
+    : 'http://192.168.3.64:5000/api/auth';
 
   const handleLogin = async () => {
     if (!email || !password) {

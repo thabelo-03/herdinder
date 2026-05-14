@@ -25,8 +25,8 @@ export default function GlobalSearch() {
   
   const debouncedQuery = useDebounce(query, 300);
 
-  // 10.0.2.2 is for Android Emulator. localhost is for Web.
-  const API_URL = Platform.OS === 'web' ? 'http://localhost:5000/api/search' : 'http://10.0.2.2:5000/api/search';
+  // localhost = web, LAN IP = physical Android device
+  const API_URL = Platform.OS === 'web' ? 'http://localhost:5000/api/search' : 'http://192.168.3.64:5000/api/search';
 
   const localAnimals = useAnimalStore((s) => s.animals);
 

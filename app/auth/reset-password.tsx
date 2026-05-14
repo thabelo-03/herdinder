@@ -18,9 +18,10 @@ export default function ResetPasswordScreen() {
   const [error, setError] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
 
-  const API_URL = Platform.OS === 'web' 
-    ? 'http://localhost:5000/api/auth' 
-    : 'http://10.0.2.2:5000/api/auth';
+  // localhost = web, LAN IP = physical Android device
+  const API_URL = Platform.OS === 'web'
+    ? 'http://localhost:5000/api/auth'
+    : 'http://192.168.3.64:5000/api/auth';
 
   const handleResetPassword = async () => {
     if (!token) {
