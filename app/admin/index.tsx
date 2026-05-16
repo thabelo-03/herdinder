@@ -30,7 +30,7 @@ export default function AdminDashboard() {
           <FontAwesome name="arrow-left" size={20} color={Colors.textPrimary} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>System Admin</Text>
-        <TouchableOpacity style={styles.settingsBtn}>
+        <TouchableOpacity style={styles.settingsBtn} onPress={() => router.push('/admin/settings')}>
           <FontAwesome name="cog" size={20} color={Colors.primary} />
         </TouchableOpacity>
       </View>
@@ -72,10 +72,26 @@ export default function AdminDashboard() {
         {/* Management Links */}
         <Text style={styles.sectionTitle}>MANAGEMENT</Text>
         <View style={styles.cardList}>
-          <MenuLink icon="user-circle" label="Manage Users & Subscriptions" />
-          <MenuLink icon="wifi" label="TTN Gateway Management" />
-          <MenuLink icon="database" label="Database Maintenance" />
-          <MenuLink icon="line-chart" label="Global Analytics" />
+          <MenuLink 
+            icon="user-circle" 
+            label="Manage Users & Subscriptions" 
+            onPress={() => router.push('/admin/users')}
+          />
+          <MenuLink 
+            icon="wifi" 
+            label="TTN Gateway Management" 
+            onPress={() => router.push('/admin/gateways')}
+          />
+          <MenuLink 
+            icon="database" 
+            label="Database Maintenance" 
+            onPress={() => router.push('/admin/database')}
+          />
+          <MenuLink 
+            icon="line-chart" 
+            label="Global Analytics" 
+            onPress={() => router.push('/admin/analytics')}
+          />
         </View>
 
         <View style={{ height: 40 }} />
@@ -94,9 +110,9 @@ function StatCard({ icon, label, value, color }: { icon: string; label: string; 
   );
 }
 
-function MenuLink({ icon, label }: { icon: string; label: string }) {
+function MenuLink({ icon, label, onPress }: { icon: string; label: string; onPress: () => void }) {
   return (
-    <TouchableOpacity style={styles.menuLink}>
+    <TouchableOpacity style={styles.menuLink} onPress={onPress}>
       <FontAwesome name={icon as any} size={16} color={Colors.primary} style={{ width: 24 }} />
       <Text style={styles.menuLinkLabel}>{label}</Text>
       <FontAwesome name="chevron-right" size={12} color={Colors.textMuted} />

@@ -447,6 +447,102 @@ export const mockGateway: Gateway = {
   lastSeen: new Date(),
 };
 
+export const mockGateways: Gateway[] = [
+  mockGateway,
+  {
+    id: 'gw-002',
+    name: 'Mat South Node 4',
+    status: 'offline',
+    signalStrength: 'Weak',
+    battery: 15,
+    location: {
+      latitude: BASE_LAT + 0.05,
+      longitude: BASE_LNG + 0.02,
+    },
+    lastSeen: new Date(Date.now() - 10 * 60 * 1000),
+  },
+  {
+    id: 'gw-003',
+    name: 'North Point Relay',
+    status: 'online',
+    signalStrength: 'Medium',
+    battery: 82,
+    location: {
+      latitude: BASE_LAT - 0.03,
+      longitude: BASE_LNG - 0.04,
+    },
+    lastSeen: new Date(Date.now() - 2 * 60 * 1000),
+  },
+];
+
+export const mockUsers: User[] = [
+  {
+    id: 'u1',
+    name: 'Tendai Moyo',
+    phone: '+263 77 123 4567',
+    email: 'tendai@farm.co.zw',
+    subscription: {
+      id: 'sub1',
+      plan: 'enterprise',
+      tagCount: 450,
+      pricePerTag: 0.50,
+      currency: 'USD',
+      status: 'active',
+      startDate: new Date('2025-01-01'),
+      endDate: new Date('2026-01-01'),
+    }
+  },
+  {
+    id: 'u2',
+    name: 'John Smith',
+    phone: '+263 71 987 6543',
+    email: 'jsmith@cattle.zw',
+    subscription: {
+      id: 'sub2',
+      plan: 'standard',
+      tagCount: 50,
+      pricePerTag: 0.75,
+      currency: 'USD',
+      status: 'active',
+      startDate: new Date('2025-03-15'),
+      endDate: new Date('2026-03-15'),
+    }
+  },
+  {
+    id: 'u3',
+    name: 'Mary Gumbo',
+    phone: '+263 78 555 0199',
+    email: 'mary@gumbofarm.com',
+    subscription: {
+      id: 'sub3',
+      plan: 'community',
+      tagCount: 15,
+      pricePerTag: 0,
+      currency: 'USD',
+      status: 'trial',
+      startDate: new Date('2026-05-01'),
+      endDate: new Date('2026-06-01'),
+      trialEndsAt: new Date('2026-06-01'),
+    }
+  },
+  {
+    id: 'u4',
+    name: 'David Ndlovu',
+    phone: '+263 73 333 4444',
+    email: 'david@veld.io',
+    subscription: {
+      id: 'sub4',
+      plan: 'starter',
+      tagCount: 10,
+      pricePerTag: 1.00,
+      currency: 'USD',
+      status: 'expired',
+      startDate: new Date('2024-05-10'),
+      endDate: new Date('2025-05-10'),
+    }
+  }
+];
+
 const generateCirclePolygon = (centerLat: number, centerLng: number, radiusKm: number, points: number = 32) => {
   const coords = [];
   const latRatio = 111.32; // km per degree latitude
