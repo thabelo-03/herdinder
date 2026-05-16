@@ -131,6 +131,7 @@ export interface Subscription {
 export interface User {
   id: string;
   _id?: string;
+  role?: 'client' | 'admin';
   name: string;
   phone: string;
   email?: string;

@@ -9,7 +9,8 @@ const router = express.Router();
 // @access  Private
 router.get('/', protect, async (req, res) => {
   try {
-    const alerts = await Alert.find({ owner: req.user._id }).sort({ createdAt: -1 });
+    const query = req.user.role === 'admin' ? {} : { owner: req.user._id };
+    const alerts = await Alert.find(query).sort({ createdAt: -1 });
     res.json(alerts);
   } catch (error) {
     console.error('Fetch Alerts Error:', error);
@@ -22,7 +23,8 @@ router.get('/', protect, async (req, res) => {
 // @access  Private
 router.put('/:id/read', protect, async (req, res) => {
   try {
-    const alert = await Alert.findOne({ _id: req.params.id, owner: req.user._id });
+    const query = req.user.role === 'admin' ? { _id: req.params.id } : { _id: req.params.id, owner: req.user._id };
+    const alert = await Alert.findOne(query);
     if (!alert) {
       return res.status(404).json({ message: 'Alert not found' });
     }

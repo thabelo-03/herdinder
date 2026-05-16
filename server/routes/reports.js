@@ -9,7 +9,8 @@ const router = express.Router();
 // @access  Private
 router.get('/', protect, async (req, res) => {
   try {
-    const reports = await Report.find({ owner: req.user._id }).sort({ createdAt: -1 });
+    const query = req.user.role === 'admin' ? {} : { owner: req.user._id };
+    const reports = await Report.find(query).sort({ createdAt: -1 });
     res.json(reports);
   } catch (error) {
     console.error('Fetch Reports Error:', error);

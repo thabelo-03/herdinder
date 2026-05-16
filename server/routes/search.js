@@ -1,10 +1,11 @@
 const express = require('express');
 const Asset = require('../models/Asset');
+const { protect } = require('../middleware/authMiddleware');
 const router = express.Router();
 
 // @route   GET /api/search
 // @desc    Global Search using MongoDB Atlas Search (with $regex fallback)
-router.get('/', async (req, res) => {
+router.get('/', protect, async (req, res) => {
   try {
     const { q } = req.query;
 
@@ -16,30 +17,43 @@ router.get('/', async (req, res) => {
     
     try {
       // 1. Try MongoDB Atlas Search (Requires "default" Search Index)
-      assets = await Asset.aggregate([
-        {
-          $search: {
-            index: "default",
-            text: {
-              query: q,
-              path: { wildcard: "*" },
-              fuzzy: { maxEdits: 2 } // Allows for typos
-            }
+      const searchStage = {
+        $search: {
+          index: "default",
+          text: {
+            query: q,
+            path: { wildcard: "*" },
+            fuzzy: { maxEdits: 2 }
           }
-        },
-        { $limit: 5 }
-      ]);
+        }
+      };
+
+      const pipeline = [searchStage];
+
+      // Filter by owner if not admin
+      if (req.user.role !== 'admin') {
+        pipeline.push({ $match: { owner: req.user._id } });
+      }
+
+      pipeline.push({ $limit: 5 });
+      assets = await Asset.aggregate(pipeline);
     } catch (searchError) {
       // 2. Fallback: If Atlas Search Index is not created yet, use standard $regex
       console.log('Atlas Search failed (index may not exist), falling back to $regex');
-      assets = await Asset.find({
+      const baseQuery = {
         $or: [
           { name: { $regex: q, $options: 'i' } },
           { tagId: { $regex: q, $options: 'i' } },
           { herdName: { $regex: q, $options: 'i' } },
           { plateNumber: { $regex: q, $options: 'i' } }
         ]
-      }).limit(5);
+      };
+
+      const finalQuery = req.user.role === 'admin' 
+        ? baseQuery 
+        : { ...baseQuery, owner: req.user._id };
+
+      assets = await Asset.find(finalQuery).limit(5);
     }
 
     // Return categorized results
