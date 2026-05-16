@@ -11,7 +11,9 @@ const router = express.Router();
 router.get('/', protect, async (req, res) => {
   try {
     const query = req.user.role === 'admin' ? {} : { owner: req.user._id };
+    console.log(`[GET /api/assets] User: ${req.user.email}, Role: ${req.user.role}, Query:`, query);
     const assets = await Asset.find(query);
+    console.log(`[GET /api/assets] Found ${assets.length} assets`);
     res.json(assets);
   } catch (error) {
     console.error('Fetch Assets Error:', error);

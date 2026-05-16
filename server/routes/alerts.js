@@ -10,7 +10,9 @@ const router = express.Router();
 router.get('/', protect, async (req, res) => {
   try {
     const query = req.user.role === 'admin' ? {} : { owner: req.user._id };
+    console.log(`[GET /api/alerts] User: ${req.user.email}, Role: ${req.user.role}, Query:`, query);
     const alerts = await Alert.find(query).sort({ createdAt: -1 });
+    console.log(`[GET /api/alerts] Found ${alerts.length} alerts`);
     res.json(alerts);
   } catch (error) {
     console.error('Fetch Alerts Error:', error);
