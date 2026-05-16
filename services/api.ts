@@ -96,19 +96,16 @@ export const animalsAPI = {
     return { data: { success: true } };
   },
   getReadings: async (id: string, range: string) => {
-    // TODO: Replace with: return api.get(`/animals/${id}/readings?range=${range}`);
-    return { data: [] };
+    return api.get(`/assets/${id}/readings?range=${range}`);
   },
 };
 
 export const alertsAPI = {
   getAll: async () => {
-    // TODO: Replace with: return api.get('/alerts');
-    return { data: [] };
+    return api.get('/alerts');
   },
   markAsRead: async (id: string) => {
-    // TODO: Replace with: return api.put(`/alerts/${id}/read`);
-    return { data: { success: true } };
+    return api.put(`/alerts/${id}/read`);
   },
 };
 

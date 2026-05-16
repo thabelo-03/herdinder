@@ -25,29 +25,16 @@ function AlertBadge({ types }: { types?: AlertType[] }) {
 
   const count = filteredAlerts.length;
 
-  if (count === 0) return null;
-
-  // Determine the badge color based on the highest severity present
   const hasCritical = filteredAlerts.some(a => a.severity === 'critical');
   const hasWarning = filteredAlerts.some(a => a.severity === 'warning');
-
   const badgeColor = hasCritical ? Colors.danger : hasWarning ? Colors.warning : Colors.info;
 
   useEffect(() => {
     if (hasCritical) {
-      // Loop a scaling animation back and forth
       Animated.loop(
         Animated.sequence([
-          Animated.timing(pulseAnim, {
-            toValue: 1.25,
-            duration: 600,
-            useNativeDriver: true,
-          }),
-          Animated.timing(pulseAnim, {
-            toValue: 1,
-            duration: 600,
-            useNativeDriver: true,
-          }),
+          Animated.timing(pulseAnim, { toValue: 1.25, duration: 600, useNativeDriver: true }),
+          Animated.timing(pulseAnim, { toValue: 1, duration: 600, useNativeDriver: true }),
         ])
       ).start();
     } else {
@@ -55,6 +42,8 @@ function AlertBadge({ types }: { types?: AlertType[] }) {
       pulseAnim.setValue(1);
     }
   }, [hasCritical, pulseAnim]);
+
+  if (count === 0) return null;
 
   return (
     <Animated.View style={[styles.badge, { backgroundColor: badgeColor, transform: [{ scale: pulseAnim }] }]}>
