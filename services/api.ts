@@ -51,10 +51,12 @@ const api = axios.create({
 });
 
 // Request interceptor to add JWT token
-api.interceptors.request.use((config) => {
-  // TODO: HARDWARE INTEGRATION - Get token from secure storage
-  // const token = await AsyncStorage.getItem('auth_token');
-  // if (token) config.headers.Authorization = `Bearer ${token}`;
+api.interceptors.request.use(async (config) => {
+  const { useAuthStore } = require('../store/authStore');
+  const token = useAuthStore.getState().token;
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
   return config;
 });
 
@@ -73,20 +75,17 @@ api.interceptors.response.use(
 // ========== API Methods (currently return mock data) ==========
 
 export const authAPI = {
-  login: async (phone: string, password: string) => {
-    // TODO: Replace with: return api.post('/auth/login', { phone, password });
-    return { data: { token: 'mock-jwt-token', user: {} } };
+  login: async (email: string, password: string) => {
+    return api.post('/auth/login', { email, password });
   },
   register: async (data: any) => {
-    // TODO: Replace with: return api.post('/auth/register', data);
-    return { data: { success: true } };
+    return api.post('/auth/register', data);
   },
 };
 
 export const animalsAPI = {
   getAll: async () => {
-    // TODO: Replace with: return api.get('/animals');
-    return { data: [] };
+    return api.get('/assets');
   },
   getById: async (id: string) => {
     // TODO: Replace with: return api.get(`/animals/${id}`);

@@ -1,15 +1,9 @@
-/**
- * HerdFinder Animal Store (Zustand)
- * Manages cattle data, selected animal, and readings
- * Persists safe zone and animal data locally.
- * TODO: HARDWARE INTEGRATION - Connect to MQTT for real-time updates
- */
-
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { create } from 'zustand'; // Import create from zustand
-import { createJSONStorage, persist } from 'zustand/middleware'; // Import persist and createJSONStorage
+import { create } from 'zustand';
+import { createJSONStorage, persist } from 'zustand/middleware';
 import { mockAnimals, mockGateway, mockSafeZone, mockWaterSources } from '../data/mockData';
 import { Animal, Gateway, SafeZone, WaterSource } from '../types';
+import { animalsAPI } from '../services/api';
 
 interface AnimalState {
   animals: Animal[];
@@ -29,6 +23,8 @@ interface AnimalState {
   setGateway: (gateway: Gateway) => void;
   updateSafeZone: (safeZone: SafeZone) => void;
   loadMockData: () => void;
+  fetchAnimals: () => Promise<void>;
+  clearStore: () => void;
   toggleLockdown: () => void;
   toggleHeatmap: () => void;
   triggerBuzzer: (animalId: string) => void;
@@ -38,12 +34,10 @@ interface AnimalState {
   disconnectMQTT: () => void;
 }
 
-// Custom reviver function to parse date strings back into Date objects
 const dateReviver = (key: string, value: any) => {
-  // Check if the value is a string and matches the ISO 8601 date format
   if (typeof value === 'string' && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?Z$/.test(value)) {
     const date = new Date(value);
-    if (!isNaN(date.getTime())) return date; // Return valid Date objects
+    if (!isNaN(date.getTime())) return date;
   }
   return value;
 };
@@ -51,7 +45,7 @@ const dateReviver = (key: string, value: any) => {
 export const useAnimalStore = create<AnimalState>()(
   persist(
     (set, get) => ({
-      animals: mockAnimals,
+      animals: [], // Start empty
       selectedAnimal: null,
       gateway: mockGateway,
       safeZone: mockSafeZone,
@@ -83,17 +77,12 @@ export const useAnimalStore = create<AnimalState>()(
       triggerBuzzer: (animalId) => {
         const animal = get().animals.find(a => a.id === animalId);
         if (!animal) return;
-
         const newStatus = !animal.buzzerEnabled;
-
-        // Update local state
         set((state) => ({
           animals: state.animals.map(a =>
             a.id === animalId ? { ...a, buzzerEnabled: newStatus } : a
           )
         }));
-
-        // Send hardware command
         const { sendBuzzerDownlink } = require('../services/mqtt');
         sendBuzzerDownlink(animal.tagId, newStatus);
       },
@@ -105,8 +94,18 @@ export const useAnimalStore = create<AnimalState>()(
         waterSources: mockWaterSources,
       }),
 
+      fetchAnimals: async () => {
+        set({ isLoading: true });
+        try {
+          const response = await animalsAPI.getAll();
+          set({ animals: response.data, isLoading: false });
+        } catch (error) {
+          console.error('Fetch animals error:', error);
+          set({ isLoading: false });
+        }
+      },
+
       connectMQTT: () => {
-        // We import the service here to avoid circular dependencies if any
         const { connectMQTT } = require('../services/mqtt');
         connectMQTT();
       },
@@ -117,11 +116,11 @@ export const useAnimalStore = create<AnimalState>()(
       },
     }),
     {
-      name: 'herdfinder-animal-storage', // unique name
+      name: 'herdfinder-animal-storage',
       storage: createJSONStorage(() => AsyncStorage, {
         reviver: dateReviver,
       }),
-      partialize: (state) => ({ animals: state.animals, safeZone: state.safeZone }), // only persist these parts of the state
+      partialize: (state) => ({ safeZone: state.safeZone }), // Don't persist animals, fetch them fresh
     }
   )
 );

@@ -21,6 +21,7 @@ import CriticalAlertOverlay from '../../components/CriticalAlertOverlay';
 import GatewayBanner from '../../components/GatewayBanner';
 import Colors from '../../constants/Colors';
 import { useAnimalStore } from '../../store/animalStore';
+import { useAuthStore } from '../../store/authStore';
 import { Animal } from '../../types';
 import { StorageManager } from '../../services/storageManager';
 import GlobalSearch from '../../components/GlobalSearch';
@@ -47,6 +48,8 @@ export default function MapScreen() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [hasHydrated, setHasHydrated] = useState(false);
 
+  const fetchAnimals = useAnimalStore((s) => s.fetchAnimals);
+
   // Handle store hydration to prevent UI flicker
   useEffect(() => {
     const unsub = useAnimalStore.persist.onFinishHydration(() => setHasHydrated(true));
@@ -54,9 +57,21 @@ export default function MapScreen() {
     return () => unsub();
   }, []);
 
+  // Fetch real data from backend when component mounts or hydrates
+  useEffect(() => {
+    if (hasHydrated) {
+      fetchAnimals();
+    }
+  }, [hasHydrated, fetchAnimals]);
+
+  const logout = useAuthStore((s) => s.logout);
+  const clearAnimals = useAnimalStore((s) => s.clearStore);
+
   const handleLogout = () => {
     setIsMenuOpen(false);
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    logout();
+    clearAnimals();
     router.replace('/auth/login');
   };
 

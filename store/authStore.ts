@@ -5,49 +5,43 @@
 
 import { create } from 'zustand';
 import { User, Subscription } from '../types';
+import { authAPI } from '../services/api';
 
 interface AuthState {
   user: User | null;
+  token: string | null;
   isAuthenticated: boolean;
   isLoading: boolean;
   
-  login: (phone: string, password: string) => Promise<void>;
+  login: (email: string, password: string) => Promise<void>;
   logout: () => void;
-  setUser: (user: User) => void;
+  setUser: (user: User, token: string) => void;
 }
 
-// Mock user for development
-const mockUser: User = {
-  id: 'u-001',
-  name: 'Farmer Moyo',
-  phone: '077 792 6123',
-  email: 'moyo@herdfinder.co.zw',
-  subscription: {
-    id: 'sub-001',
-    plan: 'standard',
-    tagCount: 5,
-    pricePerTag: 100,
-    currency: 'ZAR',
-    status: 'active',
-    startDate: new Date('2026-04-01'),
-    endDate: new Date('2026-10-01'),
-  },
-};
-
 export const useAuthStore = create<AuthState>((set) => ({
-  user: mockUser, // Auto-logged in for dev
-  isAuthenticated: true,
+  user: null,
+  token: null,
+  isAuthenticated: false,
   isLoading: false,
   
-  login: async (phone, password) => {
+  login: async (email, password) => {
     set({ isLoading: true });
-    // TODO: HARDWARE INTEGRATION - Replace with real API call
-    // const response = await api.post('/auth/login', { phone, password });
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-    set({ user: mockUser, isAuthenticated: true, isLoading: false });
+    try {
+      const response = await authAPI.login(email, password);
+      const { token, ...user } = response.data;
+      set({ 
+        user, 
+        token, 
+        isAuthenticated: true, 
+        isLoading: false 
+      });
+    } catch (error) {
+      set({ isLoading: false });
+      throw error;
+    }
   },
   
-  logout: () => set({ user: null, isAuthenticated: false }),
+  logout: () => set({ user: null, token: null, isAuthenticated: false }),
   
-  setUser: (user) => set({ user, isAuthenticated: true }),
+  setUser: (user, token) => set({ user, token, isAuthenticated: true }),
 }));
