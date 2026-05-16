@@ -105,6 +105,12 @@ export const useAnimalStore = create<AnimalState>()(
         }
       },
 
+      clearStore: () => set({
+        animals: [],
+        selectedAnimal: null,
+        isLoading: false,
+      }),
+
       connectMQTT: () => {
         const { connectMQTT } = require('../services/mqtt');
         connectMQTT();

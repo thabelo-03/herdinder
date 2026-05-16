@@ -13,6 +13,7 @@ export type DeviceType =
 
 export interface Animal {
   id: string;
+  _id?: string;
   name: string;
   category: AssetCategory;
   deviceType: DeviceType;
@@ -56,6 +57,7 @@ export interface TempReading {
 
 export interface Alert {
   id: string;
+  _id?: string;
   animalId: string;
   animalName: string;
   assetCategory?: AssetCategory;
@@ -105,6 +107,7 @@ export interface SafeZone {
 
 export interface WaterSource {
   id: string;
+  _id?: string;
   name: string;
   latitude: number;
   longitude: number;
@@ -127,6 +130,7 @@ export interface Subscription {
 
 export interface User {
   id: string;
+  _id?: string;
   name: string;
   phone: string;
   email?: string;

@@ -309,7 +309,7 @@ export default function HerdMapView({
         {/* Water Sources */}
         {waterSources.map((ws) => (
           <Circle
-            key={ws.id}
+            key={ws._id || ws.id}
             center={{ latitude: ws.latitude, longitude: ws.longitude }}
             radius={ws.radiusMeters}
             fillColor="rgba(77, 171, 247, 0.4)"
@@ -325,7 +325,7 @@ export default function HerdMapView({
           const iconName = getCategoryIcon(animal.category) as any;
           // Cattle markers show temperature color, vehicles show category color
           const pinColor = isCattle ? getTempColor(animal.temperature) : categoryColor;
-          const isSelected = selectedAnimal?.id === animal.id;
+          const isSelected = (selectedAnimal?._id || selectedAnimal?.id) === (animal._id || animal.id);
 
           // Check proximity to water sources
           const isNearWater = waterSources.some(ws => {
@@ -344,7 +344,7 @@ export default function HerdMapView({
 
           return (
             <Marker
-              key={animal.id}
+              key={animal._id || animal.id}
               coordinate={{ latitude: animal.latitude, longitude: animal.longitude }}
               onPress={() => handlePress(animal)}
               anchor={{ x: 0.5, y: 1 }}

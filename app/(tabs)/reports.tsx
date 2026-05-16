@@ -111,7 +111,7 @@ export default function ReportsScreen() {
             <Text style={styles.chartTitle}>Cattle Temperature Overview</Text>
             <View style={styles.tempBars}>
               {cattle.map((animal) => (
-                <View key={animal.id} style={styles.tempBarItem}>
+                <View key={animal._id || animal.id} style={styles.tempBarItem}>
                   <Text style={styles.tempBarLabel}>{animal.name.split(' ')[1]}</Text>
                   <View style={styles.tempBarTrack}>
                     <View style={[
@@ -171,7 +171,7 @@ export default function ReportsScreen() {
         <View style={styles.chartCard}>
           <Text style={styles.chartTitle}>Device Battery Status</Text>
           {animals.map((animal) => (
-            <View key={animal.id} style={styles.batteryRow}>
+            <View key={animal._id || animal.id} style={styles.batteryRow}>
               <View style={[styles.categoryIndicator, { backgroundColor: getCategoryColor(animal.category) }]} />
               <Text style={styles.batteryName} numberOfLines={1}>{animal.name}</Text>
               <View style={styles.batteryTrack}>
