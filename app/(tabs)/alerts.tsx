@@ -32,6 +32,11 @@ export default function AlertsScreen() {
   const markAsRead = useAlertStore((s) => s.markAsRead);
   const markAllAsRead = useAlertStore((s) => s.markAllAsRead);
   const unreadCount = useAlertStore((s) => s.unreadCount);
+  const fetchAlerts = useAlertStore((s) => s.fetchAlerts);
+
+  React.useEffect(() => {
+    fetchAlerts();
+  }, [fetchAlerts]);
 
   const filteredAlerts = (filter === 'ALL'
     ? alerts
@@ -39,6 +44,7 @@ export default function AlertsScreen() {
   ).sort((a, b) => {
     const dateA = new Date(a.createdAt).getTime();
     const dateB = new Date(b.createdAt).getTime();
+    if (isNaN(dateA) || isNaN(dateB)) return 0;
     return dateB - dateA;
   });
 

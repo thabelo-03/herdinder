@@ -40,7 +40,11 @@ export const useAuthStore = create<AuthState>()(
         }
       },
       
-      logout: () => set({ user: null, token: null, isAuthenticated: false }),
+      logout: () => {
+        set({ user: null, token: null, isAuthenticated: false });
+        require('./animalStore').useAnimalStore.getState().clearStore();
+        require('./alertStore').useAlertStore.getState().clearStore();
+      },
       
       setUser: (user, token) => set({ user, token, isAuthenticated: true }),
     }),

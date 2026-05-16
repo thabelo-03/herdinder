@@ -227,57 +227,53 @@ export default function HerdMapView({
 
         {/* Download Area Rectangle */}
         {showDownloadArea && (
-          <>
-            <Polygon
-              coordinates={regionToPolygon(downloadRegion)}
-              strokeColor={Colors.primary}
-              strokeWidth={3}
-              fillColor={Colors.primary + '30'} // Semi-transparent fill
-              lineDashPattern={[10, 5]}
-            />
-            {/* Draggable center marker for the download area */}
-            <Marker
-              coordinate={{ latitude: downloadRegion.latitude, longitude: downloadRegion.longitude }}
-              draggable
-              onDragEnd={(e) => {
-                setDownloadRegion((prev) => ({
-                  ...prev, latitude: e.nativeEvent.coordinate.latitude, longitude: e.nativeEvent.coordinate.longitude,
-                }));
-              }}
-              anchor={{ x: 0.5, y: 0.5 }} // Center the icon on the coordinate
-              zIndex={10}
-            >
-              <View style={styles.downloadAreaHandle}>
-                <FontAwesome name="arrows-alt" size={16} color="#FFF" />
-              </View>
-            </Marker>
-
-            {estimatedDownloadSizeMB && (
-              <View style={styles.estimatedSizeLabel}>
-                <Text style={styles.estimatedSizeText}>{estimatedDownloadSizeMB} MB</Text>
-              </View>
-            )}
-            {/* Corner Resizing Handles */}
-            {[
-              { id: 'nw', lat: bounds.n, lng: bounds.w },
-              { id: 'ne', lat: bounds.n, lng: bounds.e },
-              { id: 'sw', lat: bounds.s, lng: bounds.w },
-              { id: 'se', lat: bounds.s, lng: bounds.e },
-            ].map((corner) => (
-              <Marker
-                key={corner.id}
-                coordinate={{ latitude: corner.lat, longitude: corner.lng }}
-                draggable
-                onDrag={(e) => handleCornerDrag(corner.id as any, e.nativeEvent.coordinate)}
-                onDragEnd={(e) => handleCornerDrag(corner.id as any, e.nativeEvent.coordinate)}
-                anchor={{ x: 0.5, y: 0.5 }}
-                tracksViewChanges={false}
-              >
-                <View style={styles.cornerHandle} />
-              </Marker>
-            ))}
-          </>
+          <Polygon
+            coordinates={regionToPolygon(downloadRegion)}
+            strokeColor={Colors.primary}
+            strokeWidth={3}
+            fillColor={Colors.primary + '30'}
+            lineDashPattern={[10, 5]}
+          />
         )}
+
+        {/* Draggable center marker for the download area */}
+        {showDownloadArea && (
+          <Marker
+            coordinate={{ latitude: downloadRegion.latitude, longitude: downloadRegion.longitude }}
+            draggable
+            onDragEnd={(e) => {
+              setDownloadRegion((prev) => ({
+                ...prev, latitude: e.nativeEvent.coordinate.latitude, longitude: e.nativeEvent.coordinate.longitude,
+              }));
+            }}
+            anchor={{ x: 0.5, y: 0.5 }}
+            zIndex={10}
+          >
+            <View style={styles.downloadAreaHandle}>
+              <FontAwesome name="arrows-alt" size={16} color="#FFF" />
+            </View>
+          </Marker>
+        )}
+
+        {/* Corner Resizing Handles */}
+        {showDownloadArea && [
+          { id: 'nw', lat: bounds.n, lng: bounds.w },
+          { id: 'ne', lat: bounds.n, lng: bounds.e },
+          { id: 'sw', lat: bounds.s, lng: bounds.w },
+          { id: 'se', lat: bounds.s, lng: bounds.e },
+        ].map((corner) => (
+          <Marker
+            key={`corner-${corner.id}`}
+            coordinate={{ latitude: corner.lat, longitude: corner.lng }}
+            draggable
+            onDrag={(e) => handleCornerDrag(corner.id as any, e.nativeEvent.coordinate)}
+            onDragEnd={(e) => handleCornerDrag(corner.id as any, e.nativeEvent.coordinate)}
+            anchor={{ x: 0.5, y: 0.5 }}
+            tracksViewChanges={false}
+          >
+            <View style={styles.cornerHandle} />
+          </Marker>
+        ))}
 
         {/* Offline Cache Coverage visualization */}
         {showCoverage && cacheCoverage.map((bbox, index) => (
@@ -383,6 +379,13 @@ export default function HerdMapView({
           );
         })}
       </MapView>
+
+      {/* Info overlays that live ON TOP of the map (outside MapView) */}
+      {showDownloadArea && estimatedDownloadSizeMB && (
+        <View style={styles.estimatedSizeLabel}>
+          <Text style={styles.estimatedSizeText}>{estimatedDownloadSizeMB} MB</Text>
+        </View>
+      )}
 
       {/* Controls */}
       {!isPreview && (
