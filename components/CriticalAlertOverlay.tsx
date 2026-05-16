@@ -17,7 +17,7 @@ export default function CriticalAlertOverlay() {
     // Get the most recent unread critical alert
     const latestCritical = alerts
         .filter(a => !a.read && a.severity === 'critical')
-        .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())[0];
+        .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())[0];
 
     const slideAnim = useRef(new Animated.Value(-150)).current;
 
@@ -53,13 +53,13 @@ export default function CriticalAlertOverlay() {
                 <TouchableOpacity
                     style={styles.viewBtn}
                     onPress={() => {
-                        markAsRead(latestCritical.id);
+                        markAsRead(latestCritical._id || latestCritical.id);
                         router.push(`/animal/${latestCritical.animalId}`);
                     }}
                 >
                     <Text style={styles.viewBtnText}>VIEW</Text>
                 </TouchableOpacity>
-                <TouchableOpacity style={styles.closeBtn} onPress={() => markAsRead(latestCritical.id)}>
+                <TouchableOpacity style={styles.closeBtn} onPress={() => markAsRead(latestCritical._id || latestCritical.id)}>
                     <FontAwesome name="times" size={16} color={Colors.textMuted} />
                 </TouchableOpacity>
             </View>

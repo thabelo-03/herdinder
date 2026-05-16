@@ -127,9 +127,9 @@ function MapContent({ animals, safeZone, selectedAnimal, onMarkerPress }: Props)
       />
       {animals.map((animal) => (
         <Marker
-          key={animal.id}
+          key={animal._id || animal.id}
           position={[animal.latitude, animal.longitude]}
-          icon={buildIcon(animal, selectedAnimal?.id === animal.id)}
+          icon={buildIcon(animal, (selectedAnimal?._id || selectedAnimal?.id) === (animal._id || animal.id))}
           eventHandlers={{ click: () => onMarkerPress(animal) }}
         />
       ))}

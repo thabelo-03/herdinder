@@ -23,7 +23,10 @@ import Colors, { getCategoryColor, getCategoryIcon, getTempColor } from '../../c
 import { useAnimalStore } from '../../store/animalStore';
 import { Animal, AssetCategory } from '../../types';
 
-function formatLastSeen(date: Date): string {
+function formatLastSeen(dateInput: Date | string): string {
+  const date = typeof dateInput === 'string' ? new Date(dateInput) : dateInput;
+  if (!date || isNaN(date.getTime())) return 'Unknown';
+  
   const now = new Date();
   const diffMs = now.getTime() - date.getTime();
   const diffMins = Math.floor(diffMs / 60000);
@@ -77,7 +80,9 @@ export default function AnimalsScreen() {
   }).sort((a, b) => {
     if (sortBy === 'name') return a.name.localeCompare(b.name);
     if (sortBy === 'battery') return a.battery - b.battery;
-    return b.lastSeen.getTime() - a.lastSeen.getTime();
+    const dateA = new Date(a.lastSeen).getTime();
+    const dateB = new Date(b.lastSeen).getTime();
+    return dateB - dateA;
   });
 
   const renderAnimal = ({ item }: { item: Animal }) => {
@@ -88,7 +93,7 @@ export default function AnimalsScreen() {
     return (
       <TouchableOpacity
         style={styles.animalRow}
-        onPress={() => handlePressAnimal(item.id)}
+        onPress={() => handlePressAnimal(item._id || item.id)}
         activeOpacity={0.7}
       >
         {/* Icon & Category Indicator */}
@@ -228,7 +233,7 @@ export default function AnimalsScreen() {
       {/* Asset List */}
       <FlatList
         data={filtered}
-        keyExtractor={(item) => item.id}
+        keyExtractor={(item) => item._id || item.id}
         renderItem={renderAnimal}
         contentContainerStyle={styles.list}
         showsVerticalScrollIndicator={false}

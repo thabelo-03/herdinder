@@ -21,7 +21,10 @@ interface Props {
   safeZone?: SafeZone;
 }
 
-function formatLastSeen(date: Date): string {
+function formatLastSeen(dateInput: Date | string): string {
+  const date = typeof dateInput === 'string' ? new Date(dateInput) : dateInput;
+  if (!date || isNaN(date.getTime())) return 'Unknown';
+  
   const now = new Date();
   const diffMs = now.getTime() - date.getTime();
   const diffMins = Math.floor(diffMs / 60000);
@@ -155,7 +158,7 @@ export default function AnimalDetailCard({ animal, onClose, onViewDetail, safeZo
               style={[styles.buzzerBtn, animal.buzzerEnabled && styles.buzzerBtnActive]} 
               onPress={() => {
                 Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
-                useAnimalStore.getState().triggerBuzzer(animal.id);
+                useAnimalStore.getState().triggerBuzzer(animal._id || animal.id);
               }}
             >
               <FontAwesome name="bullhorn" size={20} color={animal.buzzerEnabled ? '#FFF' : categoryColor} />

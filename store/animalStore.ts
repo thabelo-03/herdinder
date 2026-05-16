@@ -62,7 +62,7 @@ export const useAnimalStore = create<AnimalState>()(
 
       updateAnimal: (id, updates) => set((state) => ({
         animals: state.animals.map((a) =>
-          a.id === id ? { ...a, ...updates } : a
+          (a._id || a.id) === id ? { ...a, ...updates } : a
         ),
       })),
 
@@ -75,12 +75,12 @@ export const useAnimalStore = create<AnimalState>()(
       toggleHeatmap: () => set((state) => ({ showHeatmap: !state.showHeatmap })),
 
       triggerBuzzer: (animalId) => {
-        const animal = get().animals.find(a => a.id === animalId);
+        const animal = get().animals.find(a => (a._id || a.id) === animalId);
         if (!animal) return;
         const newStatus = !animal.buzzerEnabled;
         set((state) => ({
           animals: state.animals.map(a =>
-            a.id === animalId ? { ...a, buzzerEnabled: newStatus } : a
+            (a._id || a.id) === animalId ? { ...a, buzzerEnabled: newStatus } : a
           )
         }));
         const { sendBuzzerDownlink } = require('../services/mqtt');

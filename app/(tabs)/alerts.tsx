@@ -36,7 +36,11 @@ export default function AlertsScreen() {
   const filteredAlerts = (filter === 'ALL'
     ? alerts
     : alerts.filter((a) => a.type === filter)
-  ).sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+  ).sort((a, b) => {
+    const dateA = new Date(a.createdAt).getTime();
+    const dateB = new Date(b.createdAt).getTime();
+    return dateB - dateA;
+  });
 
   // Summary counts
   const cattleAlerts = alerts.filter((a) => a?.assetCategory === 'cattle' && !a.read).length;
@@ -106,9 +110,9 @@ export default function AlertsScreen() {
       {/* Alert List */}
       <FlatList
         data={filteredAlerts}
-        keyExtractor={(item) => item.id}
+        keyExtractor={(item) => item._id || item.id}
         renderItem={({ item }) => (
-          <AlertItem alert={item} onPress={() => markAsRead(item.id)} />
+          <AlertItem alert={item} onPress={() => markAsRead(item._id || item.id)} />
         )}
         contentContainerStyle={styles.list}
         showsVerticalScrollIndicator={false}

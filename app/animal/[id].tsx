@@ -24,7 +24,10 @@ import Colors, { getTempColor, getTempStatus, getCategoryColor, getCategoryIcon,
 import { useAnimalStore } from '../../store/animalStore';
 import TempChart from '../../components/TempChart';
 
-function formatLastSeen(date: Date): string {
+function formatLastSeen(dateInput: Date | string): string {
+  const date = typeof dateInput === 'string' ? new Date(dateInput) : dateInput;
+  if (!date || isNaN(date.getTime())) return 'Unknown';
+  
   const now = new Date();
   const diffMs = now.getTime() - date.getTime();
   const diffMins = Math.floor(diffMs / 60000);
@@ -40,7 +43,7 @@ export default function AnimalDetailScreen() {
   const router = useRouter();
   const animals = useAnimalStore((s) => s.animals);
   const selectAnimal = useAnimalStore((s) => s.selectAnimal);
-  const animal = animals.find((a) => a.id === id);
+  const animal = animals.find((a) => (a._id || a.id) === id);
 
   if (!animal) {
     return (
@@ -205,7 +208,7 @@ export default function AnimalDetailScreen() {
               color={Colors.motorbike} 
               onPress={() => {
                 Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
-                useAnimalStore.getState().triggerBuzzer(animal.id);
+                useAnimalStore.getState().triggerBuzzer(animal._id || animal.id);
               }} 
             />
           )}

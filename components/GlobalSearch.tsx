@@ -114,7 +114,7 @@ export default function GlobalSearch() {
                   keyExtractor={(item) => item._id || item.id || item.tagId}
                   keyboardShouldPersistTaps="handled"
                   renderItem={({ item }) => (
-                    <TouchableOpacity style={styles.resultItem} onPress={() => handleResultPress(item.id || item._id)}>
+                    <TouchableOpacity style={styles.resultItem} onPress={() => handleResultPress(item._id || item.id)}>
                     <View style={styles.resultIcon}>
                       <FontAwesome name={item.category === 'vehicle' ? 'truck' : 'paw'} size={14} color={Colors.background} />
                     </View>

@@ -1,10 +1,6 @@
-/**
- * HerdFinder Alert Store (Zustand)
- */
-
 import { create } from 'zustand';
 import { Alert, AlertType } from '../types';
-import { mockAlerts } from '../data/mockData';
+import { alertsAPI } from '../services/api';
 
 interface AlertState {
   alerts: Alert[];
@@ -16,12 +12,14 @@ interface AlertState {
   markAsRead: (id: string) => void;
   markAllAsRead: () => void;
   setFilter: (filter: AlertType | 'ALL') => void;
+  clearStore: () => void;
+  fetchAlerts: () => Promise<void>;
   getFilteredAlerts: () => Alert[];
 }
 
 export const useAlertStore = create<AlertState>((set, get) => ({
-  alerts: mockAlerts,
-  unreadCount: mockAlerts.filter((a) => !a.read).length,
+  alerts: [],
+  unreadCount: 0,
   filter: 'ALL',
   
   setAlerts: (alerts) => set({
@@ -34,15 +32,22 @@ export const useAlertStore = create<AlertState>((set, get) => ({
     unreadCount: state.unreadCount + (alert.read ? 0 : 1),
   })),
   
-  markAsRead: (id) => set((state) => {
-    const alerts = state.alerts.map((a) =>
-      a.id === id ? { ...a, read: true } : a
-    );
-    return {
-      alerts,
-      unreadCount: alerts.filter((a) => !a.read).length,
-    };
-  }),
+  markAsRead: async (id) => {
+    try {
+      await alertsAPI.markAsRead(id);
+      set((state) => {
+        const alerts = state.alerts.map((a) =>
+          (a._id || a.id) === id ? { ...a, read: true } : a
+        );
+        return {
+          alerts,
+          unreadCount: alerts.filter((a) => !a.read).length,
+        };
+      });
+    } catch (error) {
+      console.error('Mark alert as read error:', error);
+    }
+  },
   
   markAllAsRead: () => set((state) => ({
     alerts: state.alerts.map((a) => ({ ...a, read: true })),
@@ -50,6 +55,18 @@ export const useAlertStore = create<AlertState>((set, get) => ({
   })),
   
   setFilter: (filter) => set({ filter }),
+
+  fetchAlerts: async () => {
+    try {
+      const response = await alertsAPI.getAll();
+      set({
+        alerts: response.data,
+        unreadCount: response.data.filter((a: any) => !a.read).length,
+      });
+    } catch (error) {
+      console.error('Fetch alerts error:', error);
+    }
+  },
   
   getFilteredAlerts: () => {
     const { alerts, filter } = get();

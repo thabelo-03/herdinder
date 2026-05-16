@@ -16,12 +16,13 @@ import React, { useCallback, useState, useEffect } from 'react';
 import { Alert, StyleSheet, Text, TouchableOpacity, View, ScrollView, ActivityIndicator, Modal } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import Colors from '../../constants/Colors';
 import AnimalDetailCard from '../../components/AnimalDetailCard';
 import CriticalAlertOverlay from '../../components/CriticalAlertOverlay';
 import GatewayBanner from '../../components/GatewayBanner';
-import Colors from '../../constants/Colors';
 import { useAnimalStore } from '../../store/animalStore';
 import { useAuthStore } from '../../store/authStore';
+import { useAlertStore } from '../../store/alertStore';
 import { Animal } from '../../types';
 import { StorageManager } from '../../services/storageManager';
 import GlobalSearch from '../../components/GlobalSearch';
@@ -49,6 +50,11 @@ export default function MapScreen() {
   const [hasHydrated, setHasHydrated] = useState(false);
 
   const fetchAnimals = useAnimalStore((s) => s.fetchAnimals);
+  const fetchAlerts = useAlertStore((s) => s.fetchAlerts);
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+  const logout = useAuthStore((s) => s.logout);
+  const clearAnimals = useAnimalStore((s) => s.clearStore);
+  const clearAlerts = useAlertStore((s) => s.clearStore);
 
   // Handle store hydration to prevent UI flicker
   useEffect(() => {
@@ -57,21 +63,27 @@ export default function MapScreen() {
     return () => unsub();
   }, []);
 
+  // Check authentication and redirect if needed
+  useEffect(() => {
+    if (hasHydrated && !isAuthenticated) {
+      router.replace('/auth/login');
+    }
+  }, [hasHydrated, isAuthenticated, router]);
+
   // Fetch real data from backend when component mounts or hydrates
   useEffect(() => {
-    if (hasHydrated) {
+    if (hasHydrated && isAuthenticated) {
       fetchAnimals();
+      fetchAlerts();
     }
-  }, [hasHydrated, fetchAnimals]);
-
-  const logout = useAuthStore((s) => s.logout);
-  const clearAnimals = useAnimalStore((s) => s.clearStore);
+  }, [hasHydrated, isAuthenticated, fetchAnimals, fetchAlerts]);
 
   const handleLogout = () => {
     setIsMenuOpen(false);
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     logout();
     clearAnimals();
+    clearAlerts();
     router.replace('/auth/login');
   };
 
@@ -90,16 +102,16 @@ export default function MapScreen() {
   const handleMarkerPress = useCallback((animal: Animal) => selectAnimal(animal), [selectAnimal]);
   const handleCloseDetail = useCallback(() => selectAnimal(null), [selectAnimal]);
   const handleViewDetail = useCallback(() => {
-    if (selectedAnimal) router.push(`/animal/${selectedAnimal.id}`);
+    if (selectedAnimal) router.push(`/animal/${selectedAnimal._id || selectedAnimal.id}`);
   }, [selectedAnimal, router]);
+
+  const unreadAlertCount = useAlertStore((s) => s.unreadCount);
 
   // Counts by category
   const cattleCount = animals.filter((a) => a.category === 'cattle').length;
   const bikeCount = animals.filter((a) => a.category === 'motorbike').length;
   const vehicleCount = animals.filter((a) => a.category === 'vehicle').length;
-  const alertCount = animals.filter((a) =>
-    (a.category === 'cattle' && a.temperature > 39) || a.tamperDetected || a.status === 'Offline'
-  ).length;
+  const alertCount = unreadAlertCount;
   const onlineCount = animals.filter((a) => a.status !== 'Offline').length;
 
   const filteredAnimals = filter 

@@ -60,8 +60,10 @@ function getAlertLabel(type: AlertTypeEnum): string {
   }
 }
 
-function formatTime(date: any): string {
-  if (!date || !(date instanceof Date)) return '---';
+function formatTime(dateInput: any): string {
+  const date = typeof dateInput === 'string' ? new Date(dateInput) : dateInput;
+  if (!date || isNaN(date.getTime())) return '---';
+  
   return date.toLocaleTimeString('en-US', {
     hour: '2-digit', minute: '2-digit', hour12: true,
   });

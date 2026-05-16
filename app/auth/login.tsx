@@ -5,6 +5,7 @@ import { useRouter } from 'expo-router';
 import { BlurView } from 'expo-blur';
 import Colors from '../../constants/Colors';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useAuthStore } from '../../store/authStore';
 
 export default function LoginScreen() {
   const router = useRouter();
@@ -19,6 +20,8 @@ export default function LoginScreen() {
     ? 'http://localhost:5000/api/auth'
     : 'http://192.168.3.64:5000/api/auth';
 
+  const login = useAuthStore((s) => s.login);
+
   const handleLogin = async () => {
     if (!email || !password) {
       setError('Please enter both email and password.');
@@ -29,25 +32,10 @@ export default function LoginScreen() {
     setIsLoading(true);
 
     try {
-      const response = await fetch(`${API_URL}/login`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || 'Failed to login');
-      }
-
-      // Save the token to maintain the session
-      if (data.token) {
-        await AsyncStorage.setItem('auth_token', data.token);
-      }
+      await login(email, password);
       router.replace('/(tabs)');
     } catch (err: any) {
-      setError(err.message || 'Network error. Make sure your server is running.');
+      setError(err.response?.data?.message || err.message || 'Network error. Make sure your server is running.');
     } finally {
       setIsLoading(false);
     }
