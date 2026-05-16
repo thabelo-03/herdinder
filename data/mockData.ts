@@ -4,7 +4,7 @@
  * TODO: HARDWARE INTEGRATION - Replace with real MQTT data from TTN
  */
 
-import { Alert, Animal, Gateway, SafeZone, TempReading, WaterSource } from '../types';
+import { Alert, Animal, Gateway, SafeZone, TempReading, User, WaterSource } from '../types';
 
 // Generate 24h temperature history
 function generateTempHistory(baseTemp: number): TempReading[] {
