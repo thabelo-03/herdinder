@@ -18,8 +18,21 @@ const UserSchema = new mongoose.Schema({
   },
   role: {
     type: String,
-    enum: ['user', 'admin'],
-    default: 'user'
+    enum: ['client', 'admin'],
+    default: 'client'
+  },
+  phone: {
+    type: String,
+  },
+  subscription: {
+    plan: { type: String, enum: ['starter', 'standard', 'community', 'enterprise'] },
+    tagCount: Number,
+    pricePerTag: Number,
+    currency: { type: String, default: 'USD' },
+    status: { type: String, enum: ['active', 'trial', 'expired', 'cancelled'] },
+    startDate: Date,
+    endDate: Date,
+    trialEndsAt: Date,
   },
   createdAt: {
     type: Date,

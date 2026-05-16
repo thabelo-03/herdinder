@@ -6,6 +6,9 @@ const cors = require('cors');
 const Reading = require('./models/Reading');
 const authRoutes = require('./routes/auth');
 const searchRoutes = require('./routes/search');
+const assetRoutes = require('./routes/assets');
+const alertRoutes = require('./routes/alerts');
+const reportRoutes = require('./routes/reports');
 
 // Initialize Express
 const app = express();
@@ -15,6 +18,9 @@ app.use(express.json());
 // API Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/search', searchRoutes);
+app.use('/api/assets', assetRoutes);
+app.use('/api/alerts', alertRoutes);
+app.use('/api/reports', reportRoutes);
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`🚀 API Server running on port ${PORT}`));

@@ -6,6 +6,11 @@ const ReadingSchema = new mongoose.Schema({
     required: true,
     index: true,
   },
+  assetId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Asset',
+    index: true,
+  },
   animalId: String,
   animalName: String,
   temperature: Number,
