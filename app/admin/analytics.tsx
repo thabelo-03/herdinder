@@ -1,13 +1,60 @@
-import React from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, SafeAreaView, Dimensions } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, SafeAreaView, Dimensions, ActivityIndicator } from 'react-native';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { useRouter } from 'expo-router';
 import Colors from '../../constants/Colors';
+import { adminAPI } from '../../services/api';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
 
 export default function GlobalAnalytics() {
   const router = useRouter();
+  const [analyticsData, setAnalyticsData] = useState<any>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState('');
+
+  const fetchAnalytics = async () => {
+    try {
+      setIsLoading(true);
+      setError('');
+      const res = await adminAPI.getAnalytics();
+      if (res.data) {
+        setAnalyticsData(res.data);
+      }
+    } catch (err: any) {
+      console.error(err);
+      setError('Failed to fetch live business metrics.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchAnalytics();
+  }, []);
+
+  if (isLoading) {
+    return (
+      <SafeAreaView style={styles.screen}>
+        <View style={styles.header}>
+          <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
+            <FontAwesome name="arrow-left" size={20} color={Colors.textPrimary} />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>Global Analytics</Text>
+          <View style={{ width: 24 }} />
+        </View>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={Colors.primary} />
+          <Text style={styles.loadingText}>Analyzing MongoDB cluster logs...</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  const growthArray = analyticsData?.growth || [40, 60, 45, 80, 55, 90, 75];
+  const metrics = analyticsData?.metrics || { avgResponseTime: '420ms', activeUsers: 0 };
+  const alertsList = analyticsData?.alerts || [];
+  const distributionList = analyticsData?.distribution || [];
 
   return (
     <SafeAreaView style={styles.screen}>
@@ -16,33 +63,23 @@ export default function GlobalAnalytics() {
           <FontAwesome name="arrow-left" size={20} color={Colors.textPrimary} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Global Analytics</Text>
-        <TouchableOpacity style={styles.exportBtn}>
-          <FontAwesome name="download" size={18} color={Colors.primary} />
+        <TouchableOpacity style={styles.exportBtn} onPress={fetchAnalytics}>
+          <FontAwesome name="refresh" size={18} color={Colors.primary} />
         </TouchableOpacity>
       </View>
 
       <ScrollView contentContainerStyle={styles.content}>
-        <View style={styles.timeFilter}>
-          <TouchableOpacity style={[styles.filterBtn, styles.activeFilter]}>
-            <Text style={[styles.filterText, styles.activeFilterText]}>7 Days</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.filterBtn}>
-            <Text style={styles.filterText}>30 Days</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.filterBtn}>
-            <Text style={styles.filterText}>90 Days</Text>
-          </TouchableOpacity>
-        </View>
+        {error ? <Text style={styles.errorText}>{error}</Text> : null}
 
         <Text style={styles.sectionTitle}>ASSET GROWTH</Text>
         <View style={styles.chartCard}>
           <View style={styles.chartHeader}>
-            <Text style={styles.chartTitle}>New Tags Registered</Text>
-            <Text style={styles.chartValue}>+124</Text>
+            <Text style={styles.chartTitle}>Live Dynamic Growth</Text>
+            <Text style={styles.chartValue}>Active</Text>
           </View>
           <View style={styles.simpleChart}>
-            {[40, 60, 45, 80, 55, 90, 75].map((h, i) => (
-              <View key={i} style={[styles.chartBar, { height: h, backgroundColor: Colors.primary }]} />
+            {growthArray.map((h: number, i: number) => (
+              <View key={i} style={[styles.chartBar, { height: Math.max(10, Math.min(100, h)), backgroundColor: Colors.primary }]} />
             ))}
           </View>
           <View style={styles.chartLabels}>
@@ -54,47 +91,49 @@ export default function GlobalAnalytics() {
 
         <View style={styles.statsGrid}>
           <View style={styles.miniStatCard}>
-            <Text style={styles.miniLabel}>Avg Response Time</Text>
-            <Text style={styles.miniValue}>420ms</Text>
+            <Text style={styles.miniLabel}>Avg API Response</Text>
+            <Text style={styles.miniValue}>{metrics.avgResponseTime}</Text>
             <Text style={styles.miniTrend}>↓ 12% vs last week</Text>
           </View>
           <View style={styles.miniStatCard}>
-            <Text style={styles.miniLabel}>Active Users</Text>
-            <Text style={styles.miniValue}>1,204</Text>
+            <Text style={styles.miniLabel}>Active Farmers</Text>
+            <Text style={styles.miniValue}>{metrics.activeUsers}</Text>
             <Text style={[styles.miniTrend, { color: Colors.success }]}>↑ 5% vs last week</Text>
           </View>
         </View>
 
         <Text style={styles.sectionTitle}>ALERT FREQUENCY BY TYPE</Text>
         <View style={styles.listCard}>
-          <View style={styles.alertStatRow}>
-            <Text style={styles.alertLabel}>Left Safe Zone</Text>
-            <View style={styles.progressBarBg}>
-              <View style={[styles.progressBarFill, { width: '75%', backgroundColor: Colors.warning }]} />
-            </View>
-            <Text style={styles.alertCount}>1,450</Text>
-          </View>
-          <View style={styles.alertStatRow}>
-            <Text style={styles.alertLabel}>Theft Alerts</Text>
-            <View style={styles.progressBarBg}>
-              <View style={[styles.progressBarFill, { width: '15%', backgroundColor: Colors.danger }]} />
-            </View>
-            <Text style={styles.alertCount}>240</Text>
-          </View>
-          <View style={styles.alertStatRow}>
-            <Text style={styles.alertLabel}>Low Battery</Text>
-            <View style={styles.progressBarBg}>
-              <View style={[styles.progressBarFill, { width: '45%', backgroundColor: Colors.info }]} />
-            </View>
-            <Text style={styles.alertCount}>890</Text>
-          </View>
+          {alertsList.length === 0 ? (
+            <Text style={styles.emptyText}>No alerts reported in live database.</Text>
+          ) : (
+            alertsList.map((alert: any, idx: number) => {
+              const maxAlertCount = Math.max(...alertsList.map((a: any) => a.count || 1));
+              const percentage = alert.count > 0 ? Math.round((alert.count / maxAlertCount) * 100) : 5;
+              const alertColor = idx === 0 ? Colors.warning : idx === 1 ? Colors.danger : Colors.info;
+
+              return (
+                <View key={idx} style={styles.alertStatRow}>
+                  <Text style={styles.alertLabel} numberOfLines={1}>{alert.label}</Text>
+                  <View style={styles.progressBarBg}>
+                    <View style={[styles.progressBarFill, { width: `${percentage}%`, backgroundColor: alertColor }]} />
+                  </View>
+                  <Text style={styles.alertCount}>{alert.count}</Text>
+                </View>
+              );
+            })
+          )}
         </View>
 
         <Text style={styles.sectionTitle}>REGIONAL DISTRIBUTION</Text>
         <View style={styles.listCard}>
-          <DistributionRow label="Mat South" count="2,450" percent="71%" />
-          <DistributionRow label="Mat North" count="650" percent="19%" />
-          <DistributionRow label="Midlands" count="350" percent="10%" />
+          {distributionList.length === 0 ? (
+            <Text style={styles.emptyText}>No regional assets registered.</Text>
+          ) : (
+            distributionList.map((dist: any, idx: number) => (
+              <DistributionRow key={idx} label={dist.label} count={dist.count.toString()} percent={dist.percent} />
+            ))
+          )}
         </View>
 
         <View style={{ height: 40 }} />
@@ -203,4 +242,8 @@ const styles = StyleSheet.create({
   distLabel: { flex: 1, color: Colors.textSecondary, fontSize: 14 },
   distCount: { color: Colors.textPrimary, fontSize: 14, fontWeight: 'bold', marginRight: 16 },
   distPercent: { color: Colors.textMuted, fontSize: 12, width: 40, textAlign: 'right' },
+  loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', gap: 12 },
+  loadingText: { color: Colors.textSecondary, fontSize: 14 },
+  errorText: { color: Colors.danger, fontSize: 13, textAlign: 'center', marginVertical: 8 },
+  emptyText: { color: Colors.textMuted, fontSize: 13, textAlign: 'center', padding: 24 },
 });

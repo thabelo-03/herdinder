@@ -73,4 +73,6 @@ export const useAlertStore = create<AlertState>((set, get) => ({
     if (filter === 'ALL') return alerts;
     return alerts.filter((a) => a.type === filter);
   },
+
+  clearStore: () => set({ alerts: [], unreadCount: 0, filter: 'ALL' }),
 }));

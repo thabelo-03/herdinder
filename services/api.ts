@@ -120,4 +120,25 @@ export const subscriptionAPI = {
   },
 };
 
+export const adminAPI = {
+  getStats: async () => {
+    return api.get('/admin/stats');
+  },
+  getUsers: async () => {
+    return api.get('/admin/users');
+  },
+  getGateways: async () => {
+    return api.get('/admin/gateways');
+  },
+  getDatabaseLogs: async () => {
+    return api.get('/admin/database/logs');
+  },
+  runDatabaseAction: async (action: string) => {
+    return api.post('/admin/database/action', { action });
+  },
+  getAnalytics: async () => {
+    return api.get('/admin/analytics');
+  },
+};
+
 export default api;

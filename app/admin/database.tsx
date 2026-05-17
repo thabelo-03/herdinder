@@ -1,11 +1,59 @@
-import React from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, SafeAreaView } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, SafeAreaView, ActivityIndicator, Alert } from 'react-native';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { useRouter } from 'expo-router';
 import Colors from '../../constants/Colors';
+import { adminAPI } from '../../services/api';
 
 export default function DatabaseMaintenance() {
   const router = useRouter();
+  const [logs, setLogs] = useState<any[]>([]);
+  const [metrics, setMetrics] = useState({
+    latency: '12ms',
+    storage: '4.2 / 512 GB',
+    uptime: '99.99%',
+  });
+  const [isLoading, setIsLoading] = useState(true);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [error, setError] = useState('');
+
+  const fetchDatabaseInfo = async () => {
+    try {
+      setIsLoading(true);
+      setError('');
+      const res = await adminAPI.getDatabaseLogs();
+      if (res.data) {
+        setLogs(res.data.logs);
+        setMetrics(res.data.metrics);
+      }
+    } catch (err: any) {
+      console.error(err);
+      setError('Failed to fetch database health metrics.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleMaintenanceAction = async (action: string) => {
+    try {
+      setIsProcessing(true);
+      const res = await adminAPI.runDatabaseAction(action);
+      if (res.data && res.data.success) {
+        Alert.alert('Success', res.data.message);
+        // Prepend the new log to list or refresh
+        setLogs(prev => [res.data.log, ...prev]);
+      }
+    } catch (err: any) {
+      console.error(err);
+      Alert.alert('Maintenance Error', 'Failed to run database action.');
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchDatabaseInfo();
+  }, []);
 
   return (
     <SafeAreaView style={styles.screen}>
@@ -14,59 +62,76 @@ export default function DatabaseMaintenance() {
           <FontAwesome name="arrow-left" size={20} color={Colors.textPrimary} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Database Maintenance</Text>
-        <TouchableOpacity style={styles.refreshBtn}>
+        <TouchableOpacity style={styles.refreshBtn} onPress={fetchDatabaseInfo}>
           <FontAwesome name="refresh" size={18} color={Colors.primary} />
         </TouchableOpacity>
       </View>
 
-      <ScrollView contentContainerStyle={styles.content}>
-        <View style={styles.healthSection}>
-          <View style={styles.healthCard}>
-            <Text style={styles.healthTitle}>Database Status</Text>
-            <View style={styles.healthRow}>
-              <View style={styles.statusDot} />
-              <Text style={styles.statusText}>Connected (Healthy)</Text>
-            </View>
-            <View style={styles.metricsGrid}>
-              <View style={styles.metricItem}>
-                <Text style={styles.metricLabel}>Latency</Text>
-                <Text style={styles.metricValue}>12ms</Text>
+      {isLoading ? (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={Colors.primary} />
+          <Text style={styles.loadingText}>Connecting to MongoDB Atlas...</Text>
+        </View>
+      ) : (
+        <ScrollView contentContainerStyle={styles.content}>
+          <View style={styles.healthSection}>
+            <View style={styles.healthCard}>
+              <Text style={styles.healthTitle}>Database Status</Text>
+              <View style={styles.healthRow}>
+                <View style={styles.statusDot} />
+                <Text style={styles.statusText}>Connected (Healthy)</Text>
               </View>
-              <View style={styles.metricItem}>
-                <Text style={styles.metricLabel}>Storage</Text>
-                <Text style={styles.metricValue}>4.2 / 512 GB</Text>
-              </View>
-              <View style={styles.metricItem}>
-                <Text style={styles.metricLabel}>Uptime</Text>
-                <Text style={styles.metricValue}>99.99%</Text>
+              <View style={styles.metricsGrid}>
+                <View style={styles.metricItem}>
+                  <Text style={styles.metricLabel}>Latency</Text>
+                  <Text style={styles.metricValue}>{metrics.latency}</Text>
+                </View>
+                <View style={styles.metricItem}>
+                  <Text style={styles.metricLabel}>Storage</Text>
+                  <Text style={styles.metricValue}>{metrics.storage}</Text>
+                </View>
+                <View style={styles.metricItem}>
+                  <Text style={styles.metricLabel}>Uptime</Text>
+                  <Text style={styles.metricValue}>{metrics.uptime}</Text>
+                </View>
               </View>
             </View>
           </View>
-        </View>
 
-        <Text style={styles.sectionTitle}>MAINTENANCE TOOLS</Text>
-        <View style={styles.toolGrid}>
-          <MaintenanceTool icon="database" label="Backup Now" description="Trigger immediate cloud backup" />
-          <MaintenanceTool icon="trash-o" label="Clear Cache" description="Purge old telemetry logs (>90 days)" />
-          <MaintenanceTool icon="bolt" label="Optimize" description="Re-index tables and vacuum DB" />
-          <MaintenanceTool icon="history" label="Restore" description="Restore from previous snapshot" />
-        </View>
+          {isProcessing && (
+            <View style={styles.processingIndicator}>
+              <ActivityIndicator size="small" color={Colors.primary} style={{ marginRight: 8 }} />
+              <Text style={styles.processingText}>Processing maintenance task...</Text>
+            </View>
+          )}
 
-        <Text style={styles.sectionTitle}>RECENT SYSTEM LOGS</Text>
-        <View style={styles.logContainer}>
-          <LogEntry type="INFO" message="Database backup completed successfully" time="2h ago" />
-          <LogEntry type="WARNING" message="Slow query detected on 'telemetry' table" time="5h ago" />
-          <LogEntry type="INFO" message="Index optimization started" time="Yesterday" />
-          <LogEntry type="ERROR" message="Connection timeout on Node 4" time="Yesterday" />
-        </View>
-      </ScrollView>
+          <Text style={styles.sectionTitle}>MAINTENANCE TOOLS</Text>
+          <View style={styles.toolGrid}>
+            <MaintenanceTool icon="database" label="Backup Now" description="Trigger immediate cloud backup" onPress={() => handleMaintenanceAction('backup')} />
+            <MaintenanceTool icon="trash-o" label="Clear Cache" description="Purge old telemetry logs (>90 days)" onPress={() => handleMaintenanceAction('clear')} />
+            <MaintenanceTool icon="bolt" label="Optimize" description="Re-index tables and vacuum DB" onPress={() => handleMaintenanceAction('optimize')} />
+            <MaintenanceTool icon="history" label="Restore" description="Restore from previous snapshot" onPress={() => handleMaintenanceAction('restore')} />
+          </View>
+
+          <Text style={styles.sectionTitle}>RECENT SYSTEM LOGS</Text>
+          <View style={styles.logContainer}>
+            {logs.length === 0 ? (
+              <Text style={styles.emptyText}>No recent maintenance logs found.</Text>
+            ) : (
+              logs.map((log) => (
+                <LogEntry key={log.id} type={log.type} message={log.message} time={log.time} />
+              ))
+            )}
+          </View>
+        </ScrollView>
+      )}
     </SafeAreaView>
   );
 }
 
-function MaintenanceTool({ icon, label, description }: { icon: string; label: string; description: string }) {
+function MaintenanceTool({ icon, label, description, onPress }: { icon: string; label: string; description: string; onPress: () => void }) {
   return (
-    <TouchableOpacity style={styles.toolCard}>
+    <TouchableOpacity style={styles.toolCard} onPress={onPress} activeOpacity={0.7}>
       <View style={styles.toolIconContainer}>
         <FontAwesome name={icon as any} size={20} color={Colors.primary} />
       </View>
@@ -164,4 +229,19 @@ const styles = StyleSheet.create({
   logTypeText: { fontSize: 9, fontWeight: 'bold' },
   logMessage: { flex: 1, color: Colors.textPrimary, fontSize: 12 },
   logTime: { color: Colors.textMuted, fontSize: 10, marginLeft: 8 },
+  loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', gap: 12 },
+  loadingText: { color: Colors.textSecondary, fontSize: 14 },
+  errorText: { color: Colors.danger, fontSize: 13, textAlign: 'center', marginVertical: 8 },
+  emptyText: { color: Colors.textMuted, fontSize: 13, textAlign: 'center', padding: 24 },
+  processingIndicator: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: Colors.primary + '15',
+    padding: 10,
+    borderRadius: 8,
+    marginHorizontal: 16,
+    marginBottom: 16,
+  },
+  processingText: { color: Colors.primary, fontSize: 12, fontWeight: '500' },
 });

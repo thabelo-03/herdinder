@@ -1,17 +1,40 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, SafeAreaView, TextInput, FlatList } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, SafeAreaView, TextInput, FlatList, ActivityIndicator } from 'react-native';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { useRouter } from 'expo-router';
 import Colors from '../../constants/Colors';
-import { mockUsers } from '../../data/mockData';
+import { adminAPI } from '../../services/api';
 
 export default function UserManagement() {
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState('');
+  const [users, setUsers] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState('');
 
-  const filteredUsers = mockUsers.filter(user => 
-    user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    user.phone.includes(searchQuery) ||
+  const fetchUsers = async () => {
+    try {
+      setIsLoading(true);
+      setError('');
+      const res = await adminAPI.getUsers();
+      if (res.data) {
+        setUsers(res.data);
+      }
+    } catch (err: any) {
+      console.error(err);
+      setError('Failed to fetch live user accounts.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchUsers();
+  }, []);
+
+  const filteredUsers = users.filter(user => 
+    user.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    user.phone?.includes(searchQuery) ||
     user.email?.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
@@ -40,52 +63,65 @@ export default function UserManagement() {
         </View>
       </View>
 
-      <FlatList
-        data={filteredUsers}
-        keyExtractor={(item) => item.id}
-        contentContainerStyle={styles.listContent}
-        renderItem={({ item }) => (
-          <TouchableOpacity style={styles.userCard}>
-            <View style={styles.userHeader}>
-              <View style={styles.avatar}>
-                <Text style={styles.avatarText}>{item.name.split(' ').map(n => n[0]).join('')}</Text>
+      {isLoading ? (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={Colors.primary} />
+          <Text style={styles.loadingText}>Fetching live users...</Text>
+        </View>
+      ) : error ? (
+        <View style={styles.loadingContainer}>
+          <Text style={styles.errorText}>{error}</Text>
+        </View>
+      ) : (
+        <FlatList
+          data={filteredUsers}
+          keyExtractor={(item) => item._id || item.id}
+          contentContainerStyle={styles.listContent}
+          renderItem={({ item }) => (
+            <TouchableOpacity style={styles.userCard}>
+              <View style={styles.userHeader}>
+                <View style={styles.avatar}>
+                  <Text style={styles.avatarText}>
+                    {item.name ? item.name.split(' ').map((n: string) => n[0]).join('') : 'U'}
+                  </Text>
+                </View>
+                <View style={styles.userInfo}>
+                  <Text style={styles.userName}>{item.name || 'Anonymous User'}</Text>
+                  <Text style={styles.userContact}>{item.phone || 'No phone'} • {item.email}</Text>
+                </View>
+                <View style={[styles.statusBadge, { backgroundColor: getStatusColor(item.subscription?.status || 'trial') + '20' }]}>
+                  <Text style={[styles.statusText, { color: getStatusColor(item.subscription?.status || 'trial') }]}>
+                    {(item.subscription?.status || 'trial').toUpperCase()}
+                  </Text>
+                </View>
               </View>
-              <View style={styles.userInfo}>
-                <Text style={styles.userName}>{item.name}</Text>
-                <Text style={styles.userContact}>{item.phone} • {item.email}</Text>
-              </View>
-              <View style={[styles.statusBadge, { backgroundColor: getStatusColor(item.subscription?.status) + '20' }]}>
-                <Text style={[styles.statusText, { color: getStatusColor(item.subscription?.status) }]}>
-                  {item.subscription?.status.toUpperCase()}
-                </Text>
-              </View>
-            </View>
 
-            <View style={styles.subscriptionInfo}>
-              <View style={styles.subDetail}>
-                <Text style={styles.subLabel}>Plan</Text>
-                <Text style={styles.subValue}>{item.subscription?.plan.toUpperCase()}</Text>
+              <View style={styles.subscriptionInfo}>
+                <View style={styles.subDetail}>
+                  <Text style={styles.subLabel}>Plan</Text>
+                  <Text style={styles.subValue}>{(item.subscription?.plan || 'trial').toUpperCase()}</Text>
+                </View>
+                <View style={styles.subDetail}>
+                  <Text style={styles.subLabel}>Tags</Text>
+                  <Text style={styles.subValue}>{item.subscription?.tagCount || 0}</Text>
+                </View>
+                <View style={styles.subDetail}>
+                  <Text style={styles.subLabel}>Expires</Text>
+                  <Text style={styles.subValue}>
+                    {item.subscription?.endDate ? new Date(item.subscription.endDate).toLocaleDateString() : 'N/A'}
+                  </Text>
+                </View>
               </View>
-              <View style={styles.subDetail}>
-                <Text style={styles.subLabel}>Tags</Text>
-                <Text style={styles.subValue}>{item.subscription?.tagCount}</Text>
-              </View>
-              <View style={styles.subDetail}>
-                <Text style={styles.subLabel}>Expires</Text>
-                <Text style={styles.subValue}>
-                  {item.subscription?.endDate ? new Date(item.subscription.endDate).toLocaleDateString() : 'N/A'}
-                </Text>
-              </View>
+            </TouchableOpacity>
+          )}
+          ListEmptyComponent={
+            <View style={styles.emptyState}>
+              <FontAwesome name="users" size={48} color={Colors.border} />
+              <Text style={styles.emptyText}>No users found matching "{searchQuery}"</Text>
             </View>
-          </TouchableOpacity>
-        )}
-        ListEmptyComponent={
-          <View style={styles.emptyState}>
-            <FontAwesome name="users" size={48} color={Colors.border} />
-            <Text style={styles.emptyText}>No users found matching "{searchQuery}"</Text>
-          </View>
-        }
-      />
+          }
+        />
+      )}
     </SafeAreaView>
   );
 }
@@ -179,4 +215,7 @@ const styles = StyleSheet.create({
     paddingTop: 60,
   },
   emptyText: { color: Colors.textMuted, marginTop: 16, fontSize: 14 },
+  loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', gap: 12 },
+  loadingText: { color: Colors.textSecondary, fontSize: 14 },
+  errorText: { color: Colors.danger, fontSize: 13, textAlign: 'center', marginVertical: 8 },
 });

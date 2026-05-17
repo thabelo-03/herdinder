@@ -1,12 +1,35 @@
-import React from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, SafeAreaView, FlatList } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, SafeAreaView, FlatList, ActivityIndicator } from 'react-native';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { useRouter } from 'expo-router';
 import Colors from '../../constants/Colors';
-import { mockGateways } from '../../data/mockData';
+import { adminAPI } from '../../services/api';
 
 export default function GatewayManagement() {
   const router = useRouter();
+  const [gateways, setGateways] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState('');
+
+  const fetchGateways = async () => {
+    try {
+      setIsLoading(true);
+      setError('');
+      const res = await adminAPI.getGateways();
+      if (res.data) {
+        setGateways(res.data);
+      }
+    } catch (err: any) {
+      console.error(err);
+      setError('Failed to fetch gateway status.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchGateways();
+  }, []);
 
   return (
     <SafeAreaView style={styles.screen}>
@@ -20,12 +43,22 @@ export default function GatewayManagement() {
         </TouchableOpacity>
       </View>
 
-      <FlatList
-        data={mockGateways}
-        keyExtractor={(item) => item.id}
-        contentContainerStyle={styles.listContent}
-        renderItem={({ item }) => (
-          <View style={styles.gatewayCard}>
+      {isLoading ? (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={Colors.primary} />
+          <Text style={styles.loadingText}>Fetching gateways...</Text>
+        </View>
+      ) : error ? (
+        <View style={styles.loadingContainer}>
+          <Text style={styles.errorText}>{error}</Text>
+        </View>
+      ) : (
+        <FlatList
+          data={gateways}
+          keyExtractor={(item) => item.id}
+          contentContainerStyle={styles.listContent}
+          renderItem={({ item }) => (
+            <View style={styles.gatewayCard}>
             <View style={styles.cardHeader}>
               <View style={[styles.statusIndicator, { backgroundColor: item.status === 'online' ? Colors.success : Colors.danger }]} />
               <View style={styles.nameContainer}>
@@ -73,6 +106,7 @@ export default function GatewayManagement() {
           </View>
         )}
       />
+      )}
     </SafeAreaView>
   );
 }
@@ -172,4 +206,7 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
   },
   actionText: { color: Colors.primary, fontSize: 12, fontWeight: '600' },
+  loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', gap: 12 },
+  loadingText: { color: Colors.textSecondary, fontSize: 14 },
+  errorText: { color: Colors.danger, fontSize: 13, textAlign: 'center', marginVertical: 8 },
 });

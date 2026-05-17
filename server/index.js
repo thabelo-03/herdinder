@@ -9,6 +9,7 @@ const searchRoutes = require('./routes/search');
 const assetRoutes = require('./routes/assets');
 const alertRoutes = require('./routes/alerts');
 const reportRoutes = require('./routes/reports');
+const adminRoutes = require('./routes/admin');
 
 // Initialize Express
 const app = express();
@@ -21,6 +22,7 @@ app.use('/api/search', searchRoutes);
 app.use('/api/assets', assetRoutes);
 app.use('/api/alerts', alertRoutes);
 app.use('/api/reports', reportRoutes);
+app.use('/api/admin', adminRoutes);
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`🚀 API Server running on port ${PORT}`));

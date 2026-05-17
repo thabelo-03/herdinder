@@ -141,7 +141,9 @@ export default function MoreScreen() {
           <MenuItem icon="language" label="Language" subtitle="English · Ndebele" color={Colors.textPrimary} onPress={() => router.push('/more/language')} />
           <MenuItem icon="refresh" label="Offline Data" subtitle="Sync & cache settings" color={Colors.info} onPress={() => router.push('/more/offline-data')} />
           <MenuItem icon="shield" label="Privacy & Security" color={Colors.textSecondary} onPress={() => router.push('/more/privacy')} />
-          <MenuItem icon="server" label="Admin Dashboard" subtitle="Manage system infrastructure" color={Colors.danger} onPress={() => router.push('/admin')} />
+          {user?.role === 'admin' && (
+            <MenuItem icon="server" label="Admin Dashboard" subtitle="Manage system infrastructure" color={Colors.danger} onPress={() => router.push('/admin')} />
+          )}
         </View>
 
         <Text style={styles.sectionTitle}>SUPPORT</Text>

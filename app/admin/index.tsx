@@ -1,27 +1,44 @@
-import React from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, SafeAreaView, Dimensions } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, SafeAreaView, Dimensions, ActivityIndicator } from 'react-native';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { useRouter } from 'expo-router';
 import Colors from '../../constants/Colors';
+import { adminAPI } from '../../services/api';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
 
-// Mock Admin Data
-const ADMIN_STATS = {
-  totalUsers: 142,
-  activeGateways: 18,
-  totalAssets: 3450,
-  systemHealth: 98.5,
-};
-
-const RECENT_ALERTS = [
-  { id: '1', type: 'Gateway Offline', location: 'Mat South Node 4', time: '10 mins ago', critical: true },
-  { id: '2', type: 'High API Latency', location: 'TTN Webhook', time: '1 hour ago', critical: false },
-  { id: '3', type: 'Database Backup', location: 'EU-West Cluster', time: '3 hours ago', critical: false },
-];
-
 export default function AdminDashboard() {
   const router = useRouter();
+  const [stats, setStats] = useState({
+    totalUsers: 0,
+    activeGateways: 0,
+    totalAssets: 0,
+    systemHealth: 100,
+  });
+  const [recentLogs, setRecentLogs] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState('');
+
+  const fetchStats = async () => {
+    try {
+      setIsLoading(true);
+      setError('');
+      const res = await adminAPI.getStats();
+      if (res.data) {
+        setStats(res.data.stats);
+        setRecentLogs(res.data.recentLogs);
+      }
+    } catch (err: any) {
+      console.error(err);
+      setError('Failed to fetch live admin stats.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchStats();
+  }, []);
 
   return (
     <SafeAreaView style={styles.screen}>
@@ -30,47 +47,59 @@ export default function AdminDashboard() {
           <FontAwesome name="arrow-left" size={20} color={Colors.textPrimary} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>System Admin</Text>
-        <TouchableOpacity style={styles.settingsBtn} onPress={() => router.push('/admin/settings')}>
-          <FontAwesome name="cog" size={20} color={Colors.primary} />
+        <TouchableOpacity style={styles.settingsBtn} onPress={fetchStats}>
+          <FontAwesome name="refresh" size={18} color={Colors.primary} />
         </TouchableOpacity>
       </View>
 
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
-        
-        {/* Status Banner */}
-        <View style={styles.statusBanner}>
-          <View style={styles.statusDot} />
-          <Text style={styles.statusText}>All Systems Operational</Text>
+      {isLoading ? (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={Colors.primary} />
+          <Text style={styles.loadingText}>Fetching system status...</Text>
         </View>
+      ) : (
+        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
+          
+          {/* Status Banner */}
+          <View style={styles.statusBanner}>
+            <View style={styles.statusDot} />
+            <Text style={styles.statusText}>All Systems Operational</Text>
+          </View>
 
-        {/* Overview Grid */}
-        <Text style={styles.sectionTitle}>OVERVIEW</Text>
-        <View style={styles.grid}>
-          <StatCard icon="users" label="Total Users" value={ADMIN_STATS.totalUsers.toString()} color={Colors.info} />
-          <StatCard icon="signal" label="Gateways" value={ADMIN_STATS.activeGateways.toString()} color={Colors.success} />
-          <StatCard icon="microchip" label="Tracked Assets" value={ADMIN_STATS.totalAssets.toString()} color={Colors.primary} />
-          <StatCard icon="heartbeat" label="System Health" value={`${ADMIN_STATS.systemHealth}%`} color={Colors.warning} />
-        </View>
+          {error ? <Text style={styles.errorText}>{error}</Text> : null}
 
-        {/* System Alerts */}
-        <Text style={styles.sectionTitle}>RECENT SYSTEM LOGS</Text>
-        <View style={styles.cardList}>
-          {RECENT_ALERTS.map((alert) => (
-            <View key={alert.id} style={styles.alertRow}>
-              <View style={[styles.alertIcon, { backgroundColor: alert.critical ? Colors.danger + '20' : Colors.info + '20' }]}>
-                <FontAwesome name={alert.critical ? 'exclamation-triangle' : 'info-circle'} size={14} color={alert.critical ? Colors.danger : Colors.info} />
-              </View>
-              <View style={styles.alertContent}>
-                <Text style={styles.alertType}>{alert.type}</Text>
-                <Text style={styles.alertLocation}>{alert.location}</Text>
-              </View>
-              <Text style={styles.alertTime}>{alert.time}</Text>
-            </View>
-          ))}
-        </View>
+          {/* Overview Grid */}
+          <Text style={styles.sectionTitle}>OVERVIEW</Text>
+          <View style={styles.grid}>
+            <StatCard icon="users" label="Total Users" value={stats.totalUsers.toString()} color={Colors.info} />
+            <StatCard icon="signal" label="Gateways" value={stats.activeGateways.toString()} color={Colors.success} />
+            <StatCard icon="microchip" label="Tracked Assets" value={stats.totalAssets.toString()} color={Colors.primary} />
+            <StatCard icon="heartbeat" label="System Health" value={`${stats.systemHealth}%`} color={Colors.warning} />
+          </View>
 
-        {/* Management Links */}
-        <Text style={styles.sectionTitle}>MANAGEMENT</Text>
+          {/* System Alerts */}
+          <Text style={styles.sectionTitle}>RECENT CRITICAL ALERTS</Text>
+          <View style={styles.cardList}>
+            {recentLogs.length === 0 ? (
+              <Text style={styles.emptyText}>No recent critical logs detected.</Text>
+            ) : (
+              recentLogs.map((alert) => (
+                <View key={alert.id} style={styles.alertRow}>
+                  <View style={[styles.alertIcon, { backgroundColor: alert.critical ? Colors.danger + '20' : Colors.info + '20' }]}>
+                    <FontAwesome name={alert.critical ? 'exclamation-triangle' : 'info-circle'} size={14} color={alert.critical ? Colors.danger : Colors.info} />
+                  </View>
+                  <View style={styles.alertContent}>
+                    <Text style={styles.alertType}>{alert.type}</Text>
+                    <Text style={styles.alertLocation}>{alert.location}</Text>
+                  </View>
+                  <Text style={styles.alertTime}>{alert.time}</Text>
+                </View>
+              ))
+            )}
+          </View>
+
+          {/* Management Links */}
+          <Text style={styles.sectionTitle}>MANAGEMENT</Text>
         <View style={styles.cardList}>
           <MenuLink 
             icon="user-circle" 
@@ -96,6 +125,7 @@ export default function AdminDashboard() {
 
         <View style={{ height: 40 }} />
       </ScrollView>
+      )}
     </SafeAreaView>
   );
 }
@@ -187,4 +217,8 @@ const styles = StyleSheet.create({
     borderBottomColor: Colors.border,
   },
   menuLinkLabel: { flex: 1, color: Colors.textPrimary, fontSize: 14, fontWeight: '500' },
+  loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', gap: 12 },
+  loadingText: { color: Colors.textSecondary, fontSize: 14 },
+  errorText: { color: Colors.danger, fontSize: 13, textAlign: 'center', marginVertical: 8 },
+  emptyText: { color: Colors.textMuted, fontSize: 13, textAlign: 'center', padding: 24 },
 });
