@@ -58,12 +58,22 @@ router.get('/stats', protect, admin, async (req, res) => {
 
     const activeGateways = mockGatewaysList.filter(g => g.status === 'online').length;
 
+    // Calculate Dynamic MRR
+    const activeUsers = await User.find({ 'subscription.status': 'active' });
+    let totalMRR = 0;
+    for (const u of activeUsers) {
+      if (u.subscription && u.subscription.tagCount && u.subscription.pricePerTag) {
+        totalMRR += u.subscription.tagCount * u.subscription.pricePerTag;
+      }
+    }
+
     res.json({
       stats: {
         totalUsers,
         activeGateways,
         totalAssets,
         systemHealth: 98.5,
+        totalMRR: Math.round(totalMRR * 100) / 100,
       },
       recentLogs: criticalAlerts.map(a => ({
         id: a._id.toString(),
@@ -211,9 +221,9 @@ router.put('/users/:id/subscription', protect, admin, async (req, res) => {
       return res.status(404).json({ message: 'User not found' });
     }
 
-    let pricePerTag = 0.50;
-    if (plan === 'starter') pricePerTag = 1.00;
-    else if (plan === 'standard') pricePerTag = 0.75;
+    let pricePerTag = 10.00;
+    if (plan === 'starter') pricePerTag = 20.00;
+    else if (plan === 'standard') pricePerTag = 15.00;
     else if (plan === 'community') pricePerTag = 0.00;
 
     const startDate = new Date();
@@ -223,7 +233,7 @@ router.put('/users/:id/subscription', protect, admin, async (req, res) => {
       plan,
       tagCount: Number(tagCount) || 10,
       pricePerTag,
-      currency: 'USD',
+      currency: 'ZAR',
       status,
       startDate,
       endDate,

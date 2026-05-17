@@ -160,7 +160,9 @@ export default function UserManagement() {
                 </View>
                 <View style={styles.subDetail}>
                   <Text style={styles.subLabel}>Tags</Text>
-                  <Text style={styles.subValue}>{item.subscription?.tagCount || 0}</Text>
+                  <Text style={[styles.subValue, item.subscription?.status === 'expired' && { color: Colors.danger }]}>
+                    {item.subscription?.status === 'expired' ? 'N/A' : (item.subscription?.tagCount || 0)}
+                  </Text>
                 </View>
                 <View style={styles.subDetail}>
                   <Text style={styles.subLabel}>Expires</Text>
