@@ -139,6 +139,9 @@ export const adminAPI = {
   getAnalytics: async () => {
     return api.get('/admin/analytics');
   },
+  updateSubscription: async (userId: string, data: { plan: string; tagCount: number; status: string }) => {
+    return api.put(`/admin/users/${userId}/subscription`, data);
+  },
 };
 
 export default api;

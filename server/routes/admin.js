@@ -200,4 +200,51 @@ router.get('/analytics', protect, admin, async (req, res) => {
   }
 });
 
+// @route   PUT /api/admin/users/:id/subscription
+// @desc    Update/Activate user subscription
+// @access  Private/Admin
+router.put('/users/:id/subscription', protect, admin, async (req, res) => {
+  try {
+    const { plan, tagCount, status } = req.body;
+    const user = await User.findById(req.params.id);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    let pricePerTag = 0.50;
+    if (plan === 'starter') pricePerTag = 1.00;
+    else if (plan === 'standard') pricePerTag = 0.75;
+    else if (plan === 'community') pricePerTag = 0.00;
+
+    const startDate = new Date();
+    const endDate = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000); // 1 year
+
+    user.subscription = {
+      plan,
+      tagCount: Number(tagCount) || 10,
+      pricePerTag,
+      currency: 'USD',
+      status,
+      startDate,
+      endDate,
+    };
+
+    await user.save();
+    
+    // Add audit log
+    const auditLog = {
+      id: `log-${Date.now()}`,
+      type: 'INFO',
+      message: `Updated subscription for ${user.name} to ${plan.toUpperCase()} (${status.toUpperCase()})`,
+      time: 'Just now',
+    };
+    systemLogs.unshift(auditLog);
+
+    res.json(user);
+  } catch (error) {
+    console.error('Update Subscription Error:', error);
+    res.status(500).json({ message: 'Server error updating user subscription' });
+  }
+});
+
 module.exports = router;
