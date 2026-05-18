@@ -36,8 +36,15 @@ export default function ReportsScreen() {
   const highTempCount = cattle.filter((a) => a.temperature > 39).length;
   const movingCount = animals.filter((a) => a.status === 'Moving').length;
   const alertsToday = alerts.filter((a) => {
-    const today = new Date();
-    return a.createdAt.toDateString() === today.toDateString();
+    if (!a.createdAt) return false;
+    try {
+      const today = new Date();
+      const alertDate = new Date(a.createdAt);
+      if (isNaN(alertDate.getTime())) return false;
+      return alertDate.toDateString() === today.toDateString();
+    } catch {
+      return false;
+    }
   }).length;
 
   // Mini bar chart data for alerts by type
